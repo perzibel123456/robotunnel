@@ -1,0 +1,204 @@
+/* ========================================= */
+/* --- 1. EXISTING GLOBAL STYLES --- */
+/* ========================================= */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding-top: 80px; /* Space for the fixed navbar */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    user-select: none; /* Prevent text selection while driving */
+    -webkit-user-select: none;
+}
+
+h1, h2 {
+    font-weight: bold;
+}
+
+footer {
+    font-size: 0.9rem;
+}
+
+/* Photo Hover Effects (Keep existing) */
+.photo {
+    width: 100%;
+    height: 100%;
+    transition: 500ms;
+}
+.photo:hover {
+    transform: scale(1.2);      
+}
+
+/* Existing Video/Control Box styles (Keeping these just in case) */
+.video-box {
+    background-color: #000000;
+    width: 100%;
+    aspect-ratio: 16/9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+}
+
+.control-box {
+    border-radius: 15px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    padding: 30px;
+}
+
+.arrow {
+    font-size: 2rem;
+    user-select: none;
+}
+
+/* Card & Form Styles (Keep existing) */
+.min-vh-100 { min-height: 100vh; }
+
+.card {
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border: none;
+    transition: transform 0.3s ease-in-out;
+}
+.card:hover { transform: translateY(-5px); }
+
+.form-title { margin-bottom: 25px; font-weight: 700; }
+.alert { margin-top: 15px; font-size: 0.9em; }
+
+/* Custom Buttons */
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+    font-weight: bold;
+}
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+    font-weight: bold;
+}
+.btn-success:hover {
+    background-color: #1e7e34;
+    border-color: #1e7e34;
+}
+
+/* ========================================= */
+/* --- 2. NEW ROBOT CONTROLLER STYLES --- */
+/* ========================================= */
+
+/* Main Video Wrapper (The Big Screen) */
+#video-wrapper {
+    width: 100%;
+    height: 80vh; /* Big height as requested */
+    background-color: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+#ipcam {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Ensures video fits without stretching */
+}
+
+/* Mobile Controller Buttons */
+.mobile-btn {
+    width: 100%;
+    height: 60px;
+    font-size: 24px;
+    font-weight: 900;
+    border-radius: 12px;
+    box-shadow: 0 4px 0px #0056b3; /* Darker blue shadow */
+    touch-action: manipulation;
+}
+.mobile-btn:active {
+    box-shadow: 0 2px 0px #0056b3;
+    transform: translateY(2px);
+}
+
+.d-pad-container { max-width: 280px; margin: 0 auto; }
+
+/* Helpers for layout */
+.video-section, .controls-section { width: 100%; }
+
+
+/* ========================================= */
+/* --- 3. PHONE LANDSCAPE MODE (GAME CONSOLE) --- */
+/* ========================================= */
+@media only screen and (max-height: 600px) and (orientation: landscape) {
+    
+    body {
+        height: 100vh;
+        overflow: hidden; /* No scrolling in game mode */
+        padding: 0 !important;
+        margin: 0;
+    }
+
+    /* Hide standard web elements */
+    .navbar, .desktop-hint, footer, .form-title, .card { display: none !important; }
+    .container { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+
+    /* Side-by-Side Layout */
+    .main-layout {
+        display: flex !important;
+        flex-direction: row !important;
+        height: 100vh;
+        width: 100vw;
+        margin-top: 0 !important;
+    }
+
+    /* LEFT: Video Area (Big) */
+    .video-section {
+        width: 75%;
+        height: 100%;
+        background: #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    #video-wrapper {
+        height: 100% !important; 
+        width: 100% !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none;
+    }
+
+    /* RIGHT: Controls Area (Small strip) */
+    .controls-section {
+        width: 25%;
+        height: 100%;
+        background: #f8f9fa;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 5px;
+        border-left: 2px solid #ccc;
+    }
+
+    /* Adjust Buttons for tight space */
+    .d-pad-container {
+        display: block !important; 
+        width: 100%;
+        transform: scale(0.8);
+    }
+    
+    .btn-group { margin-bottom: 5px !important; }
+}
