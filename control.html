@@ -1,140 +1,185 @@
-<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>שליטה על הרובוט - ROBOTUNNEL</title>
-    
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+// ==========================================
+// 1. הגדרות והתחברות (CONFIGURATION)
+// ==========================================
+const firebaseConfig = {
+    apiKey: "AIzaSyB7EtdQumROer8xuzWu9wffjEvQz8XdbNU",
+    authDomain: "rubotunnel.firebaseapp.com",
+    databaseURL: "https://rubotunnel-default-rtdb.firebaseio.com",
+    projectId: "rubotunnel",
+    storageBucket: "rubotunnel.firebasestorage.app",
+    messagingSenderId: "211308486888",
+    appId: "1:211308486888:web:9d8e8b7594fd646898a95d"
+};
 
-    <style>
-        /* הערה: אם תרצה חסימה הרמטית עד להתחברות, שנה ל-display: none */
-        body { background-color: #f8f9fa; font-family: sans-serif; touch-action: manipulation; display: block; }
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.database();
+
+// ==========================================
+// 2. משתנים גלובליים - חשוב להשאיר בחוץ
+// ==========================================
+let currentScanMode = 0;   // Bit 7 (128)
+let currentScanRun = 0;    // Bit 6 (64)
+let currentServo = 0;      // Bits 5-4
+let currentSpeed = 0;      // Bit 3 (8)
+let currentDirection = 0;  // Bits 2-0
+
+const statusText = document.getElementById('status-display');
+
+// ==========================================
+// 3. לוגיקה מרכזית ושליחה
+// ==========================================
+
+function sendUpdate() {
+    // חישוב הסכום הסופי של כל הביטים
+    let finalCommand = currentScanMode + currentScanRun + currentServo + currentSpeed + currentDirection;
+    
+    // עדכון ב-Firebase
+    db.ref('/toAltera').set(finalCommand);
+    
+    // עדכון תצוגה במסך (אם קיים אלמנט)
+    const display = document.getElementById('status-display');
+    if(display) display.innerText = `Cmd: ${finalCommand}`;
+    
+    console.log("Sent Command:", finalCommand);
+}
+
+/**
+ * פונקציה לעדכון מערכת הסריקה - מוודא שהיא גלובלית (window)
+ */
+window.updateScanSystem = function(type) {
+    const btnMode = document.getElementById('btn-scan-mode');
+    const btnRun = document.getElementById('btn-scan-run');
+
+    if (type === 'mode') {
+        // Toggle בין 0 ל-128
+        currentScanMode = (currentScanMode === 128) ? 0 : 128;
         
-        .controller-wrapper {
-            background-color: #1a1a1a; color: #e0e0e0;
-            border-radius: 15px; padding: 20px; margin-top: 20px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        if (currentScanMode === 128) {
+            btnMode.innerText = "מצב אוטומטי (128)";
+            btnMode.classList.add('active-mode');
+            btnRun.disabled = false; // פותח את לחצן הסריקה
+        } else {
+            btnMode.innerText = "מצב ידני (0)";
+            btnMode.classList.remove('active-mode');
+            btnRun.disabled = true; // נועל את לחצן הסריקה
+            currentScanRun = 0; // מכבה סריקה אם עברנו לידני
+            btnRun.classList.remove('active-mode');
+            btnRun.innerText = "הפעל סריקה (0)";
         }
-
-        .control-panel {
-            background: #2a2a2a; padding: 20px; border-radius: 15px;
-            margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); text-align: center;
+    } 
+    else if (type === 'run') {
+        // Toggle בין 0 ל-64
+        currentScanRun = (currentScanRun === 64) ? 0 : 64;
+        
+        if (currentScanRun === 64) {
+            btnRun.innerText = "סורק... (64)";
+            btnRun.classList.add('active-mode');
+        } else {
+            btnRun.innerText = "הפעל סריקה (0)";
+            btnRun.classList.remove('active-mode');
         }
+    }
+    sendUpdate();
+};
 
-        .d-pad {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
-            max-width: 180px; margin: 0 auto; direction: ltr; 
+// --- ניהול מהירות ---
+function handleSpeedToggle(val) {
+    if (val === 8) {
+        currentSpeed = (currentSpeed === 8) ? 0 : 8;
+    } else {
+        currentSpeed = 0;
+    }
+    updateSpeedUI();
+    sendUpdate();
+}
+
+function updateSpeedUI() {
+    const stopBtn = document.getElementById('sp-stop');
+    const goBtn = document.getElementById('sp-go');
+    if(!stopBtn || !goBtn) return;
+
+    stopBtn.classList.remove('active-mode');
+    goBtn.classList.remove('active-mode');
+
+    if (currentSpeed === 8) {
+        goBtn.classList.add('active-mode');
+    } else {
+        stopBtn.classList.add('active-mode');
+    }
+}
+
+// --- ניהול סרוו ותנועה ---
+function setServo(val, btn) {
+    currentServo = val;
+    document.querySelectorAll('.btn-servo').forEach(b => b.classList.remove('active-mode'));
+    btn.classList.add('active-mode');
+    sendUpdate();
+}
+
+function setMove(val) {
+    currentDirection = val;
+    sendUpdate();
+}
+
+// ==========================================
+// 4. מאזינים לאירועים (Listeners)
+// ==========================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // מהירות
+    document.querySelectorAll('.btn-speed').forEach(btn => {
+        btn.addEventListener('click', () => handleSpeedToggle(parseInt(btn.getAttribute('data-speed'))));
+    });
+
+    // סרוו
+    document.querySelectorAll('.btn-servo').forEach(btn => {
+        btn.addEventListener('click', () => setServo(parseInt(btn.getAttribute('data-servo')), btn));
+    });
+
+    // ניווט WASD (W=1, S=2, A=3, D=4)
+    const moveMap = { 'mob-W': 1, 'mob-S': 2, 'mob-A': 3, 'mob-D': 4 };
+    Object.keys(moveMap).forEach(id => {
+        const btn = document.getElementById(id);
+        if(btn) {
+            const start = (e) => { e.preventDefault(); setMove(moveMap[id]); btn.classList.add('active-mode'); };
+            const stop = (e) => { e.preventDefault(); setMove(0); btn.classList.remove('active-mode'); };
+            btn.addEventListener('mousedown', start);
+            btn.addEventListener('mouseup', stop);
+            btn.addEventListener('touchstart', start);
+            btn.addEventListener('touchend', stop);
         }
-        .d-pad button { height: 60px; font-size: 1.2rem; font-weight: bold; border-radius: 8px; }
+    });
 
-        #mob-W { grid-column: 2; grid-row: 1; }
-        #mob-A { grid-column: 1; grid-row: 2; }
-        #mob-S { grid-column: 2; grid-row: 2; }
-        #mob-D { grid-column: 3; grid-row: 2; }
+// משתנה גלובלי למצב הפנס
+let flashActive = 0; 
 
-        /* עיצוב לכפתור פעיל (Toggle / Active) */
-        .active-mode { 
-            background-color: #ffc107 !important; color: black !important;
-            box-shadow: 0 0 15px rgba(255, 193, 7, 0.6) !important;
-            border-color: #ffc107 !important;
+const flashBtn = document.getElementById('btn-flash');
+
+if (flashBtn) {
+    flashBtn.addEventListener('click', () => {
+        // הפיכת המצב (אם היה 0 יהיה 1, אם היה 1 יהיה 0)
+        flashActive = (flashActive === 0) ? 1 : 0;
+        
+        // עדכון ב-Firebase
+        db.ref('/flash').set(flashActive);
+        
+        // עדכון ויזואלי של הכפתור
+        if (flashActive === 1) {
+            flashBtn.innerText = "פנס דולק";
+            flashBtn.classList.add('active-mode');
+        } else {
+            flashBtn.innerText = "הפעל פנס";
+            flashBtn.classList.remove('active-mode');
         }
-
-        .navbar-brand img { margin-left: 10px; }
-    </style>
-</head>
-<body>
-
-
-
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow">
-  <div class="container">
-    <a class="navbar-brand d-flex align-items-center fw-bold" href="index.html">
-      <img src="logo.png" alt="Logo" width="60" class="ms-2"> ROBOTUNNEL
-    </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="register.html">כניסה</a></li>
-        <li class="nav-item"><a class="nav-link " href="index.html">בית</a></li>
-        <li class="nav-item"><a class="nav-link" href="about.html">אודות</a></li>
-        <li class="nav-item"><a class="nav-link" href="gallery.html">גלריה</a></li>
-        <li class="nav-item"><a class="nav-link " href="contact.html">צור קשר</a></li>
-        <li class="nav-item"><a class="btn btn-warning btn-sm ms-lg-3 text-dark fw-bold active" href="control.html">ממשק שליטה</a></li>
-      </ul>
-    </div>
-  </div>
-</nav>
-<div class="mt-5 pt-4"></div>
-
-<section class="container my-4">
-    <h2 class="text-center mb-4 font-weight-bold">ממשק שליטה ובקרה</h2>
-
-    <div class="controller-wrapper">
-        <div class="video-section container text-center mb-4"> 
-            <div class="ratio ratio-16x9 border border-secondary rounded bg-dark mx-auto" style="max-width: 640px;">
-                <img src="" id="ipcam" alt="ממתין למצלמה..." style="object-fit: contain;">
-            </div>
-        </div>
-
-        <div class="control-panel mx-auto mb-4" style="max-width: 640px;">
-            <h5 class="text-warning mb-3">מצבי מערכת וסריקה</h5>
-            <div class="row g-2">
-                <div class="col-6">
-                    <button id="btn-scan-mode" class="btn btn-outline-info w-100 fw-bold py-3" onclick="updateScanSystem('mode')">
-                        <i class="bi bi-cpu ms-1"></i> מצב ידני 
-                    </button>
-                </div>
-                <div class="col-6">
-                    <button id="btn-scan-run" class="btn btn-outline-warning w-100 fw-bold py-3" onclick="updateScanSystem('run')" disabled>
-                        <i class="bi bi-radar ms-1"></i> הפעל סריקה 
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6">
-                <div class="control-panel h-100">
-                    <h5 class="mb-3">תנועה</h5>
-                    <div class="d-pad">
-                        <button id="mob-W" class="btn btn-outline-light">W</button>
-                        <button id="mob-A" class="btn btn-outline-light">A</button>
-                        <button id="mob-S" class="btn btn-outline-light">S</button>
-                        <button id="mob-D" class="btn btn-outline-light">D</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-6">
-                <div class="control-panel h-100">
-                    <h6 class="text-center">מהירות </h6>
-                    <div class="btn-group w-100 mb-4" dir="ltr">
-                        <button id="sp-stop" class="btn btn-outline-danger btn-speed" data-speed="0">stop</button>
-                        <button id="sp-go" class="btn btn-outline-secondary btn-speed" data-speed="8">go</button>
-                    </div>
-
-                    <h6 class="text-center">זווית מצלמה</h6>
-                    <div class="btn-group w-100" dir="ltr">
-                        <button class="btn btn-outline-primary btn-servo" data-servo="32">שמאל </button>
-                        <button class="btn btn-outline-primary btn-servo" data-servo="0">מרכז </button>
-                        <button class="btn btn-outline-primary btn-servo" data-servo="16">ימין</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-
-
-<script src="control.js"></script>
-</body>
-</html>
+        
+        console.log("Flash state:", flashActive);
+    });
+}
+    // מצלמה
+    db.ref("/camIp").on("value", snap => {
+        const ip = snap.val();
+        if (ip) document.getElementById("ipcam").src = "http://" + ip + ":81/stream";
+    });
+});
