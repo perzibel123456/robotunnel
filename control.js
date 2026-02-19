@@ -152,6 +152,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+// משתנה גלובלי למצב הפנס
+let flashActive = 0; 
+
+const flashBtn = document.getElementById('btn-flash');
+
+if (flashBtn) {
+    flashBtn.addEventListener('click', () => {
+        // הפיכת המצב (אם היה 0 יהיה 1, אם היה 1 יהיה 0)
+        flashActive = (flashActive === 0) ? 1 : 0;
+        
+        // עדכון ב-Firebase
+        db.ref('/flash').set(flashActive);
+        
+        // עדכון ויזואלי של הכפתור
+        if (flashActive === 1) {
+            flashBtn.innerText = "פנס דולק";
+            flashBtn.classList.add('active-mode');
+        } else {
+            flashBtn.innerText = "הפעל פנס";
+            flashBtn.classList.remove('active-mode');
+        }
+        
+        console.log("Flash state:", flashActive);
+    });
+}
     // מצלמה
     db.ref("/camIp").on("value", snap => {
         const ip = snap.val();
