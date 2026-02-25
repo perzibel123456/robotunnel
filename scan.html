@@ -13,35 +13,56 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <style>
-        /* הגדרות בסיסיות: מניעת גלילה וביטול פעולות מגע ברירת מחדל של הדפדפן כדי לא להפריע לסיבוב המודל */
+        /* הגדרות כלליות */
         body { background-color: #0b0f14; margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; touch-action: none; }
         #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100vh; z-index: 1; }
         
-        /* סרגל נתונים שקוף ומודרני - מתאים את עצמו לרוחב המסך */
+        /* Navbar עיצוב אחיד */
+        .navbar { z-index: 100; background-color: rgba(33, 37, 41, 0.95) !important; backdrop-filter: blur(10px); }
+        .navbar-brand img { margin-left: 10px; transition: 0.3s; }
+        
+        /* התאמת גדלים ל-Navbar לפי מסך */
+        @media (max-width: 768px) {
+            .navbar-brand { font-size: 1.1rem; }
+            .navbar-brand img { width: 40px; }
+        }
+        @media (min-width: 769px) {
+            .navbar-brand { font-size: 1.5rem; }
+            .navbar-brand img { width: 60px; }
+        }
+
+        /* סרגל נתונים (Telemetry) */
         .telemetry-overlay { 
             position: absolute; 
-            top: 70px; /* מתחת ל-Navbar */
+            top: 85px; /* מרווח קבוע מה-Navbar */
             left: 50%;
             transform: translateX(-50%);
             z-index: 10; 
-            background: rgba(11, 15, 20, 0.7); /* שקיפות למראה עתידני */
-            backdrop-filter: blur(10px); /* אפקט טשטוש זכוכית */
+            background: rgba(11, 15, 20, 0.75); 
+            backdrop-filter: blur(10px); 
             border: 1px solid rgba(255, 193, 7, 0.3);
             border-radius: 15px;
             padding: 10px 20px;
             display: flex;
-            gap: 25px;
+            gap: 20px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-            width: auto;
-            max-width: 90%;
+            max-width: 95%;
         }
 
-        /* עיצוב הנתונים בתוך הסרגל */
-        .stat-box { text-align: center; }
-        .stat-label { font-size: 0.65rem; color: #ffc107; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
-        .stat-value { font-family: 'Courier New', monospace; font-size: 1.2rem; font-weight: bold; color: #00f2ff; }
+        .stat-box { text-align: center; min-width: 60px; }
+        .stat-label { font-size: 0.65rem; color: #ffc107; text-transform: uppercase; margin-bottom: 2px; }
+        .stat-value { font-family: 'Courier New', monospace; font-weight: bold; color: #00f2ff; }
 
-        /* כפתורי שליטה צפים - ממוקמים בפינה כדי לא להפריע לאגודלים */
+        @media (max-width: 768px) {
+            .stat-value { font-size: 1.1rem; }
+            .telemetry-overlay { gap: 15px; padding: 8px 15px; }
+        }
+        @media (min-width: 769px) {
+            .stat-value { font-size: 1.5rem; }
+            .telemetry-overlay { gap: 40px; }
+        }
+
+        /* כפתורי שליטה צפים */
         .control-fabs { position: absolute; bottom: 30px; left: 20px; z-index: 20; display: flex; flex-direction: column; gap: 15px; }
         .fab { 
             width: 55px; height: 55px; border-radius: 50%; border: none; 
@@ -49,47 +70,30 @@
             font-size: 1.5rem; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.6); 
             transition: 0.2s; 
         }
-        .fab:active { transform: scale(0.9); }
         .btn-stop { background: #dc3545; }
         .btn-start { background: #198754; }
         .btn-reset { background: #6c757d; }
-
-        /* התאמות ספציפיות למחשב (מסכים רחבים) */
-        @media (min-width: 768px) {
-            .stat-value { font-size: 1.6rem; }
-            .telemetry-overlay { padding: 15px 40px; gap: 50px; }
-        }
     </style>
 </head>
 <body>
-
-
-        .navbar-brand img { margin-left: 10px; }
-    </style>
-</head>
-<body>
-
-
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow">
   <div class="container">
     <a class="navbar-brand d-flex align-items-center fw-bold" href="index.html">
-      <img src="logo.png" alt="Logo" width="60" class="ms-2"> ROBOTUNNEL
+      <img src="logo.png" alt="Logo"> ROBOTUNNEL
     </a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link " href="index.html">בית</a></li>
-        <li class="nav-item"><a class="btn btn-warning btn-sm ms-lg-3 text-dark fw-bold active" href="control.html">ממשק שליטה</a></li>
-                <li class="nav-item"><a class="nav-link " href="scan.html"> scan</a></li>
-
+        <li class="nav-item"><a class="nav-link" href="index.html">בית</a></li>
+        <li class="nav-item"><a class="nav-link" href="control.html">ממשק שליטה</a></li>
+        <li class="nav-item"><a class="nav-link active" href="scan.html">סריקה (SCAN)</a></li>
       </ul>
     </div>
   </div>
 </nav>
-<div class="mt-5 pt-4"></div>
 
 <div class="telemetry-overlay">
     <div class="stat-box">
@@ -126,58 +130,44 @@
 
     // --- 2. אתחול מנוע גרפי Three.js ---
     const container = document.getElementById('canvas-container');
-    const scene = new THREE.Scene(); // יצירת הסצנה (המרחב הווירטואלי)
+    const scene = new THREE.Scene();
     
-    // מצלמת פרספקטיבה ליצירת עומק. Far=2000 מאפשר לראות רחוק מאוד.
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); // alpha מאפשר רקע שקוף
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio); // התאמה לרזולוציית המסך (Retina/4K)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // ביצועים אופטימליים
     container.appendChild(renderer.domElement);
 
-    // OrbitControls: מאפשר סיבוב וזום בנגיעה או עכבר
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    camera.position.set(0, 250,450); // נקודת מבט התחלתית מלמעלה ומאחור
-    controls.enableDamping = true; // סיבוב חלק ונעים יותר
+    camera.position.set(0, 250, 450);
+    controls.enableDamping = true;
     controls.update();
 
-    // תאורה: אור סביבתי + אור נקודתי שעוקב אחרי המצלמה
     scene.add(new THREE.AmbientLight(0xffffff, 0.4));
     const pointLight = new THREE.PointLight(0x00f2ff, 1.2);
     camera.add(pointLight);
     scene.add(camera);
 
-    /** * גיאומטריית המנהרה:
-     * משתמשים ב-BufferGeometry לביצועים מקסימליים (Direct to GPU).
-     */
     const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(300000); // מערך XYZ לנקודות
-    const indices = []; // מערך אינדקסים לחיבור המשולשים
+    const positions = new Float32Array(300000);
+    const indices = [];
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     
-    // חומר (Material): צבע טורקיז עתידני, מגיב לאור, דו-צדדי ושקוף למחצה
     const material = new THREE.MeshPhongMaterial({ color: 0x00f2ff, side: THREE.DoubleSide, flatShading: true, transparent: true, opacity: 0.75 });
     const tunnelMesh = new THREE.Mesh(geometry, material);
     scene.add(tunnelMesh);
 
-    // הוספת רשת עזר (Grid) ענקית על הרצפה להתמצאות
     scene.add(new THREE.GridHelper(1000, 100, 0x444444, 0x222222));
 
-    // משתני ניהול המצב
     let lastPoints = null, currentZ = 0, vertexIdx = 0, isScanning = false;
-    const ROBOT_WIDTH = 25; // רוחב קבוע של מבנה הרובוט
+    const ROBOT_WIDTH = 18;
 
-    /**
-     * פונקציית השרטוט: drawSolidLayer
-     * מקבלת את נתוני המרחק מהחיישנים ומייצרת "פרוסת" מנהרה חדשה.
-     */
     function drawSolidLayer(A, B, C) {
-        const resolution = 20; // כמות הנקודות בקשת המנהרה
-        const totalWidth = A + C + ROBOT_WIDTH; // רוחב אמיתי: מרחק ימין + מרחק שמאל + רוחב רובוט
-        const centerShift = (A - C) / 2; // חישוב היסט המרכז במידה והרובוט לא בקו האמצע
+        const resolution = 20;
+        const totalWidth = A + C + ROBOT_WIDTH;
+        const centerShift = (A - C) / 2;
         let newPoints = [];
 
-        // לולאת חישוב נקודות XYZ עבור קשת המנהרה (נוסחת פרבולה)
         for (let i = 0; i <= resolution; i++) {
             const t = i / resolution;
             const x = -(totalWidth / 2) + (totalWidth * t) + centerShift;
@@ -190,7 +180,6 @@
             vertexIdx++;
         }
 
-        // חיבור השכבה הנוכחית לקודמתה (יצירת ה"עור" של המנהרה)
         if (lastPoints !== null) {
             const startOld = vertexIdx - (resolution + 1) * 2;
             const startNew = vertexIdx - (resolution + 1);
@@ -202,35 +191,30 @@
         }
 
         lastPoints = newPoints;
-        geometry.attributes.position.needsUpdate = true; // עדכון כרטיס המסך
-        geometry.computeVertexNormals(); // חישוב הצללה
-        currentZ -= 1.5; // התקדמות בעומק המנהרה בכל פעימת מידע
+        geometry.attributes.position.needsUpdate = true;
+        geometry.computeVertexNormals();
+        currentZ -= 1.5;
 
-        // עדכון המספרים בסרגל הנתונים
         document.getElementById('display-width').innerText = Math.round(totalWidth);
         document.getElementById('display-height').innerText = Math.round(B);
         document.getElementById('display-depth').innerText = (Math.abs(currentZ) / 10).toFixed(1);
     }
 
-    /**
-     * פונקציית toggleScanning: הפעלה ועצירה של הסריקה והרובוט
-     */
     function toggleScanning() {
         const btn = document.getElementById('stopBtn');
         if (!isScanning) {
             isScanning = true;
-            database.ref('toAltera').set(192); // פקודה: מצב אוטו' + סריקה
+            database.ref('toAltera').set(192);
             btn.innerHTML = '<i class="bi bi-pause-fill"></i>';
             btn.className = 'fab btn-stop';
         } else {
             isScanning = false;
-            database.ref('toAltera').set(0); // עצירה מוחלטת
+            database.ref('toAltera').set(0);
             btn.innerHTML = '<i class="bi bi-play-fill"></i>';
             btn.className = 'fab btn-start';
         }
     }
 
-    // מאזין לנתונים המגיעים מה-Altera (דרך ה-ESP32 ל-Firebase)
     database.ref('fromAltera').on('value', (snapshot) => {
         const data = snapshot.val();
         if (data && isScanning) {
@@ -239,18 +223,15 @@
         }
     });
 
-    // התחלה אוטומטית ברגע שהדף נטען
     window.onload = () => { if (!isScanning) toggleScanning(); };
 
-    // לולאת האנימציה המרכזית (Render Loop)
     function animate() {
         requestAnimationFrame(animate);
-        controls.update(); // מעדכן את מצב המצלמה
-        renderer.render(scene, camera); // מצייר את הסצנה
+        controls.update();
+        renderer.render(scene, camera);
     }
     animate();
 
-    // טיפול בשינוי גודל החלון (Resize) כדי שהגרפיקה תמיד תהיה פרופורציונלית
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
