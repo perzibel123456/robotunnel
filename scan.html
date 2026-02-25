@@ -7,158 +7,164 @@
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <style>
-        body { background-color: #f8f9fa; margin: 0; overflow: hidden; font-family: sans-serif; touch-action: none; }
-        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100vh; background: #0b0f14; }
+        /* הגדרות בסיסיות: מניעת גלילה וביטול פעולות מגע ברירת מחדל של הדפדפן כדי לא להפריע לסיבוב המודל */
+        body { background-color: #0b0f14; margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; touch-action: none; }
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100vh; z-index: 1; }
         
-        /* סרגל נתונים עליון דק - לא מפריע לאגודלים */
-        .telemetry-bar { 
+        /* סרגל נתונים שקוף ומודרני - מתאים את עצמו לרוחב המסך */
+        .telemetry-overlay { 
             position: absolute; 
-            top: 60px; /* ממש מתחת ל-Navbar */
-            left: 0;
-            right: 0;
+            top: 70px; /* מתחת ל-Navbar */
+            left: 50%;
+            transform: translateX(-50%);
             z-index: 10; 
-            background: rgba(0, 0, 0, 0.6); /* חצי שקוף */
-            backdrop-filter: blur(5px); /* אפקט טשטוש יוקרתי */
-            color: #fff; 
-            padding: 5px 15px;
-            border-bottom: 1px solid rgba(255, 193, 7, 0.3);
+            background: rgba(11, 15, 20, 0.7); /* שקיפות למראה עתידני */
+            backdrop-filter: blur(10px); /* אפקט טשטוש זכוכית */
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-radius: 15px;
+            padding: 10px 20px;
             display: flex;
-            justify-content: space-around;
-            align-items: center;
+            gap: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            width: auto;
+            max-width: 90%;
         }
 
-        .data-point { text-align: center; }
-        .data-label { font-size: 0.7rem; color: #ffc107; text-transform: uppercase; }
-        .val { font-family: monospace; font-size: 1.1rem; font-weight: bold; color: #00f2ff; }
+        /* עיצוב הנתונים בתוך הסרגל */
+        .stat-box { text-align: center; }
+        .stat-label { font-size: 0.65rem; color: #ffc107; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
+        .stat-value { font-family: 'Courier New', monospace; font-size: 1.2rem; font-weight: bold; color: #00f2ff; }
 
-        /* כפתור צף קטן לעצירה - בצד כדי לא להפריע */
-        .fab-stop {
-            position: absolute;
-            bottom: 30px;
-            left: 20px;
-            z-index: 20;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            border: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            transition: 0.3s;
+        /* כפתורי שליטה צפים - ממוקמים בפינה כדי לא להפריע לאגודלים */
+        .control-fabs { position: absolute; bottom: 30px; left: 20px; z-index: 20; display: flex; flex-direction: column; gap: 15px; }
+        .fab { 
+            width: 55px; height: 55px; border-radius: 50%; border: none; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 1.5rem; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.6); 
+            transition: 0.2s; 
         }
+        .fab:active { transform: scale(0.9); }
+        .btn-stop { background: #dc3545; }
+        .btn-start { background: #198754; }
+        .btn-reset { background: #6c757d; }
 
+        /* התאמות ספציפיות למחשב (מסכים רחבים) */
         @media (min-width: 768px) {
-            .telemetry-bar { top: 70px; padding: 10px 30px; }
-            .val { font-size: 1.4rem; }
+            .stat-value { font-size: 1.6rem; }
+            .telemetry-overlay { padding: 15px 40px; gap: 50px; }
         }
     </style>
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow-sm">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow-sm" style="z-index: 100;">
   <div class="container-fluid">
-    <a class="navbar-brand fw-bold" href="index.html">ROBOTUNNEL</a>
+    <a class="navbar-brand fw-bold text-warning" href="index.html">ROBOTUNNEL <small class="text-white fw-light">3D SCAN</small></a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto">
         <li class="nav-item"><a class="nav-link" href="index.html">בית</a></li>
-        <li class="nav-item"><a class="nav-link" href="control.html">שליטה</a></li>
+        <li class="nav-item"><a class="nav-link" href="control.html">לוח בקרה</a></li>
       </ul>
     </div>
   </div>
 </nav>
 
-<div class="telemetry-bar">
-    <div class="data-point">
-        <div class="data-label">רוחב</div>
-        <span id="display-width" class="val">0</span><small>cm</small>
+<div class="telemetry-overlay">
+    <div class="stat-box">
+        <div class="stat-label">רוחב</div>
+        <div class="stat-value"><span id="display-width">0</span><small>cm</small></div>
     </div>
-    <div class="data-point">
-        <div class="data-label">גובה</div>
-        <span id="display-height" class="val">0</span><small>cm</small>
+    <div class="stat-box">
+        <div class="stat-label">גובה</div>
+        <div class="stat-value"><span id="display-height">0</span><small>cm</small></div>
     </div>
-    <div class="data-point">
-        <div class="data-label">עומק</div>
-        <span id="display-depth" class="val">0</span><small>m</small>
+    <div class="stat-box">
+        <div class="stat-label">מרחק</div>
+        <div class="stat-value"><span id="display-depth">0</span><small>m</small></div>
     </div>
 </div>
 
-<button id="stopBtn" class="fab-stop btn-success" onclick="toggleScanning()">
-    <i class="bi bi-play-fill"></i>
-</button>
+<div class="control-fabs">
+    <button id="stopBtn" class="fab btn-start" onclick="toggleScanning()">
+        <i class="bi bi-play-fill"></i>
+    </button>
+    <button class="fab btn-reset" onclick="location.reload()">
+        <i class="bi bi-arrow-clockwise"></i>
+    </button>
+</div>
 
 <div id="canvas-container"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    /**
-     * הסברים על הקוד (Documentation):
-     */
-
-    // 1. הגדרות Firebase - תקשורת מול ה-ESP32 וה-Altera
+    // --- 1. אתחול תקשורת Firebase ---
     const firebaseConfig = { databaseURL: "https://rubotunnel-default-rtdb.firebaseio.com", projectId: "rubotunnel" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // 2. אתחול מנוע גרפי Three.js
+    // --- 2. אתחול מנוע גרפי Three.js ---
     const container = document.getElementById('canvas-container');
-    const scene = new THREE.Scene();
+    const scene = new THREE.Scene(); // יצירת הסצנה (המרחב הווירטואלי)
     
-    // מצלמה רחבה - PerspectiveCamera מאפשרת תחושת עומק במנהרה
+    // מצלמת פרספקטיבה ליצירת עומק. Far=2000 מאפשר לראות רחוק מאוד.
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); // alpha מאפשר רקע שקוף
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio); // התאמה לרזולוציית המסך (Retina/4K)
     container.appendChild(renderer.domElement);
 
-    // controls - מאפשר להזיז את המודל בנגיעה (Touch) במסך
+    // OrbitControls: מאפשר סיבוב וזום בנגיעה או עכבר
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    camera.position.set(0, 10, 20); // נקודת מבט התחלתית נוחה
+    camera.position.set(0, 15, 25); // נקודת מבט התחלתית מלמעלה ומאחור
+    controls.enableDamping = true; // סיבוב חלק ונעים יותר
     controls.update();
 
-    // הוספת תאורה דינמית
-    scene.add(new THREE.AmbientLight(0xffffff, 0.5)); 
-    const pointLight = new THREE.PointLight(0x00f2ff, 1);
-    camera.add(pointLight); 
+    // תאורה: אור סביבתי + אור נקודתי שעוקב אחרי המצלמה
+    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+    const pointLight = new THREE.PointLight(0x00f2ff, 1.2);
+    camera.add(pointLight);
     scene.add(camera);
 
-    // יצירת מבנה המנהרה (Geometry)
+    /** * גיאומטריית המנהרה:
+     * משתמשים ב-BufferGeometry לביצועים מקסימליים (Direct to GPU).
+     */
     const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(300000); 
-    const indices = []; 
+    const positions = new Float32Array(300000); // מערך XYZ לנקודות
+    const indices = []; // מערך אינדקסים לחיבור המשולשים
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     
-    const material = new THREE.MeshPhongMaterial({ color: 0x00f2ff, side: THREE.DoubleSide, flatShading: true, transparent: true, opacity: 0.7 });
+    // חומר (Material): צבע טורקיז עתידני, מגיב לאור, דו-צדדי ושקוף למחצה
+    const material = new THREE.MeshPhongMaterial({ color: 0x00f2ff, side: THREE.DoubleSide, flatShading: true, transparent: true, opacity: 0.75 });
     const tunnelMesh = new THREE.Mesh(geometry, material);
     scene.add(tunnelMesh);
-    
-    // רשת עזר (Grid) על הרצפה
+
+    // הוספת רשת עזר (Grid) ענקית על הרצפה להתמצאות
     scene.add(new THREE.GridHelper(1000, 100, 0x444444, 0x222222));
 
+    // משתני ניהול המצב
     let lastPoints = null, currentZ = 0, vertexIdx = 0, isScanning = false;
-    const ROBOT_WIDTH = 25;
+    const ROBOT_WIDTH = 25; // רוחב קבוע של מבנה הרובוט
 
     /**
-     * פונקציית השרטוט המרכזית: drawSolidLayer
-     * לוקחת את הנתונים מהחיישנים ומייצרת "פרוסת" מנהרה חדשה.
+     * פונקציית השרטוט: drawSolidLayer
+     * מקבלת את נתוני המרחק מהחיישנים ומייצרת "פרוסת" מנהרה חדשה.
      */
     function drawSolidLayer(A, B, C) {
-        const resolution = 20; 
-        const totalWidth = A + C + ROBOT_WIDTH; 
-        const centerShift = (A - C) / 2;
+        const resolution = 20; // כמות הנקודות בקשת המנהרה
+        const totalWidth = A + C + ROBOT_WIDTH; // רוחב אמיתי: מרחק ימין + מרחק שמאל + רוחב רובוט
+        const centerShift = (A - C) / 2; // חישוב היסט המרכז במידה והרובוט לא בקו האמצע
         let newPoints = [];
 
-        // חישוב נקודות XYZ עבור הקשת (פרבולה)
+        // לולאת חישוב נקודות XYZ עבור קשת המנהרה (נוסחת פרבולה)
         for (let i = 0; i <= resolution; i++) {
             const t = i / resolution;
             const x = -(totalWidth / 2) + (totalWidth * t) + centerShift;
@@ -171,7 +177,7 @@
             vertexIdx++;
         }
 
-        // חיבור השכבה הנוכחית לשכבה הקודמת בעזרת משולשים
+        // חיבור השכבה הנוכחית לקודמתה (יצירת ה"עור" של המנהרה)
         if (lastPoints !== null) {
             const startOld = vertexIdx - (resolution + 1) * 2;
             const startNew = vertexIdx - (resolution + 1);
@@ -184,34 +190,34 @@
 
         lastPoints = newPoints;
         geometry.attributes.position.needsUpdate = true; // עדכון כרטיס המסך
-        geometry.computeVertexNormals(); // חישוב הצללה ריאליסטית
-        currentZ -= 1.5; // התקדמות בעומק
+        geometry.computeVertexNormals(); // חישוב הצללה
+        currentZ -= 1.5; // התקדמות בעומק המנהרה בכל פעימת מידע
 
-        // עדכון הסרגל העליון
+        // עדכון המספרים בסרגל הנתונים
         document.getElementById('display-width').innerText = Math.round(totalWidth);
         document.getElementById('display-height').innerText = Math.round(B);
         document.getElementById('display-depth').innerText = (Math.abs(currentZ) / 10).toFixed(1);
     }
 
     /**
-     * פונקציית toggleScanning: מעבר בין מצב עבודה למצב עצירה
+     * פונקציית toggleScanning: הפעלה ועצירה של הסריקה והרובוט
      */
     function toggleScanning() {
         const btn = document.getElementById('stopBtn');
         if (!isScanning) {
             isScanning = true;
-            database.ref('toAltera').set(192); // פקודה: מצב אוטומטי + התחלת סריקה
+            database.ref('toAltera').set(192); // פקודה: מצב אוטו' + סריקה
             btn.innerHTML = '<i class="bi bi-pause-fill"></i>';
-            btn.className = 'fab-stop btn-danger'; // הופך לאדום בעצירה
+            btn.className = 'fab btn-stop';
         } else {
             isScanning = false;
             database.ref('toAltera').set(0); // עצירה מוחלטת
             btn.innerHTML = '<i class="bi bi-play-fill"></i>';
-            btn.className = 'fab-stop btn-success';
+            btn.className = 'fab btn-start';
         }
     }
 
-    // האזנה לנתונים מ-Firebase (Altera)
+    // מאזין לנתונים המגיעים מה-Altera (דרך ה-ESP32 ל-Firebase)
     database.ref('fromAltera').on('value', (snapshot) => {
         const data = snapshot.val();
         if (data && isScanning) {
@@ -220,14 +226,18 @@
         }
     });
 
-    // התחלה אוטומטית כשהדף עולה
+    // התחלה אוטומטית ברגע שהדף נטען
     window.onload = () => { if (!isScanning) toggleScanning(); };
 
-    // לולאת הרינדור (60fps)
-    function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
+    // לולאת האנימציה המרכזית (Render Loop)
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update(); // מעדכן את מצב המצלמה
+        renderer.render(scene, camera); // מצייר את הסצנה
+    }
     animate();
 
-    // התאמה לשינוי גודל מסך
+    // טיפול בשינוי גודל החלון (Resize) כדי שהגרפיקה תמיד תהיה פרופורציונלית
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
