@@ -13,15 +13,17 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <style>
-        /* הגדרות כלליות */
+        /* הגדרות גלובליות: ביטול גלילה וקיבוע המגע לצורך שליטה במודל התלת-מימדי בלבד */
         body { background-color: #0b0f14; margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; touch-action: none; }
+        
+        /* המיכל של המנוע הגרפי - תופס את כל שטח המסך */
         #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100vh; z-index: 1; }
         
-        /* Navbar עיצוב אחיד */
+        /* עיצוב ה-Navbar: שימוש ב-Glassmorphism (טשטוש רקע) למראה מודרני */
         .navbar { z-index: 100; background-color: rgba(33, 37, 41, 0.95) !important; backdrop-filter: blur(10px); }
         .navbar-brand img { margin-left: 10px; transition: 0.3s; }
         
-        /* התאמת גדלים ל-Navbar לפי מסך */
+        /* התאמות רספונסיביות ל-Navbar: שינוי גדלים בין מחשב לטלפון */
         @media (max-width: 768px) {
             .navbar-brand { font-size: 1.1rem; }
             .navbar-brand img { width: 40px; }
@@ -31,10 +33,10 @@
             .navbar-brand img { width: 60px; }
         }
 
-        /* סרגל נתונים (Telemetry) */
+        /* סרגל הנתונים הצף (Telemetry): מרכז המסך מתחת ל-Navbar */
         .telemetry-overlay { 
             position: absolute; 
-            top: 85px; /* מרווח קבוע מה-Navbar */
+            top: 85px; 
             left: 50%;
             transform: translateX(-50%);
             z-index: 10; 
@@ -51,8 +53,10 @@
 
         .stat-box { text-align: center; min-width: 60px; }
         .stat-label { font-size: 0.65rem; color: #ffc107; text-transform: uppercase; margin-bottom: 2px; }
+        /* שימוש בפונט Monospace מבטיח שהמספרים לא "ירעדו" כשהם מתחלפים במהירות */
         .stat-value { font-family: 'Courier New', monospace; font-weight: bold; color: #00f2ff; }
 
+        /* הגדרת גדלי טקסט משתנים לפי סוג המכשיר */
         @media (max-width: 768px) {
             .stat-value { font-size: 1.1rem; }
             .telemetry-overlay { gap: 15px; padding: 8px 15px; }
@@ -62,7 +66,7 @@
             .telemetry-overlay { gap: 40px; }
         }
 
-        /* כפתורי שליטה צפים */
+        /* כפתורי שליטה צפים (FAB): מיקום בפינה התחתונה לנוחות שימוש עם האגודל */
         .control-fabs { position: absolute; bottom: 30px; left: 20px; z-index: 20; display: flex; flex-direction: column; gap: 15px; }
         .fab { 
             width: 55px; height: 55px; border-radius: 50%; border: none; 
@@ -89,7 +93,7 @@
       <ul class="navbar-nav ms-auto">
         <li class="nav-item"><a class="nav-link" href="index.html">בית</a></li>
         <li class="nav-item"><a class="nav-link" href="control.html">ממשק שליטה</a></li>
-        <li class="nav-item"><a class="nav-link active" href="scan.html">סריקה (SCAN)</a></li>
+        <li class="nav-item"><a class="nav-link active" href="scan.html">SCAN</a></li>
       </ul>
     </div>
   </div>
@@ -122,68 +126,100 @@
 <div id="canvas-container"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
-    // --- 1. אתחול תקשורת Firebase ---
+    /**
+     * --- 1. אתחול תקשורת Firebase ---
+     * חיבור לבסיס הנתונים בזמן אמת כדי לקבל את נתוני החיישנים מה-Altera/ESP32.
+     */
     const firebaseConfig = { databaseURL: "https://rubotunnel-default-rtdb.firebaseio.com", projectId: "rubotunnel" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // --- 2. אתחול מנוע גרפי Three.js ---
+    /**
+     * --- 2. אתחול מנוע גרפי Three.js ---
+     */
     const container = document.getElementById('canvas-container');
-    const scene = new THREE.Scene();
+    const scene = new THREE.Scene(); // יצירת ה"עולם" הווירטואלי
     
+    // מצלמת PerspectiveCamera מדמה ראייה אנושית - עצמים רחוקים נראים קטנים יותר
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+    
+    // WebGLRenderer הוא המנוע שמשתמש בכרטיס המסך לציור המודל
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // ביצועים אופטימליים
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // אופטימיזציה למסכי Retina/4K
     container.appendChild(renderer.domElement);
 
+    // OrbitControls מאפשר למשתמש לסובב, להזיז ולבצע זום למודל עם העכבר או האצבעות
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    camera.position.set(0, 250, 450);
-    controls.enableDamping = true;
+    camera.position.set(0, 250, 450); // מיקום התחלתי של המצלמה (מבט על)
+    controls.enableDamping = true; // מוסיף תחושת "חלקלקות" ואינרציה לסיבוב
     controls.update();
 
+    // הוספת תאורה: Ambient להארה כללית ו-PointLight שצמודה למצלמה (כמו פנס של חוקר)
     scene.add(new THREE.AmbientLight(0xffffff, 0.4));
     const pointLight = new THREE.PointLight(0x00f2ff, 1.2);
     camera.add(pointLight);
     scene.add(camera);
 
+    /** * גיאומטריית המנהרה:
+     * משתמשים ב-BufferGeometry לביצועים מקסימליים. אנחנו יוצרים מודל דינמי
+     * שמתעדכן בשיטת "זרימה" - כל דגימה מהרובוט מוסיפה שכבה חדשה.
+     */
     const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(300000);
-    const indices = [];
+    const positions = new Float32Array(300000); // מערך XYZ לנקודות - תומך בנפח נתונים גדול
+    const indices = []; // מערך המגדיר איך לחבר 3 נקודות למשולש (Face)
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     
+    // חומר (Material): צבע טורקיז, מגיב לאור, דו-צדדי (רואים גם מבפנים) ושקוף למחצה
     const material = new THREE.MeshPhongMaterial({ color: 0x00f2ff, side: THREE.DoubleSide, flatShading: true, transparent: true, opacity: 0.75 });
     const tunnelMesh = new THREE.Mesh(geometry, material);
     scene.add(tunnelMesh);
 
+    // GridHelper מוסיף את הרשת על הרצפה - עוזר למפעיל להבין קנה מידה ומרחק
     scene.add(new THREE.GridHelper(1000, 100, 0x444444, 0x222222));
 
+    // משתני ניהול מצב לסרטוט הדינמי
     let lastPoints = null, currentZ = 0, vertexIdx = 0, isScanning = false;
-    const ROBOT_WIDTH = 18;
+    const ROBOT_WIDTH = 18; // רוחב פיזי של הרובוט (משמש לכיול המדידה)
 
+    /**
+     * פונקציית drawSolidLayer:
+     * הופכת את שלשת המרחקים (A, B, C) לפרוסה תלת-מימדית של המנהרה.
+     * 
+     */
     function drawSolidLayer(A, B, C) {
-        const resolution = 20;
-        const totalWidth = A + C + ROBOT_WIDTH;
-        const centerShift = (A - C) / 2;
+        const resolution = 20; // כמות הנקודות המרכיבות את הקשת (דיוק)
+        const totalWidth = A + C + ROBOT_WIDTH; // רוחב המנהרה האמיתי
+        const centerShift = (A - C) / 2; // היסט המרכז במידה והרובוט קרוב יותר לקיר אחד
         let newPoints = [];
 
+        // לולאת חישוב נקודות הקשת בשימוש בנוסחת פרבולה
         for (let i = 0; i <= resolution; i++) {
-            const t = i / resolution;
+            const t = i / resolution; // התקדמות מ-0 ל-1
             const x = -(totalWidth / 2) + (totalWidth * t) + centerShift;
+            // נוסחה ריבועית לחישוב קימור התקרה על בסיס גובה B
             const y = B * (1 - Math.pow((x - centerShift) / (totalWidth / 2 + 0.0001), 2));
             
+            // הזנת הנתונים למערך הזיכרון של Three.js
             positions[vertexIdx * 3] = x;
-            positions[vertexIdx * 3 + 1] = Math.max(0, y);
+            positions[vertexIdx * 3 + 1] = Math.max(0, y); // מוודא שהרצפה לא יורדת מתחת ל-0
             positions[vertexIdx * 3 + 2] = currentZ;
             newPoints.push(new THREE.Vector3(x, y, currentZ));
             vertexIdx++;
         }
 
+        /**
+         * אלגוריתם חיבור שכבות (Stitching):
+         * מחבר את השכבה הנוכחית לשכבה הקודמת בעזרת יצירת משולשים (Faces).
+         * 
+         */
         if (lastPoints !== null) {
             const startOld = vertexIdx - (resolution + 1) * 2;
             const startNew = vertexIdx - (resolution + 1);
             for (let i = 0; i < resolution; i++) {
+                // יצירת שני משולשים שמרכיבים מרובע אחד במעטפת
                 indices.push(startOld + i, startNew + i, startOld + i + 1);
                 indices.push(startNew + i, startNew + i + 1, startOld + i + 1);
             }
@@ -191,47 +227,64 @@
         }
 
         lastPoints = newPoints;
-        geometry.attributes.position.needsUpdate = true;
-        geometry.computeVertexNormals();
-        currentZ -= 1.5;
+        geometry.attributes.position.needsUpdate = true; // עדכון כרטיס המסך בנתונים החדשים
+        geometry.computeVertexNormals(); // חישוב הצללה ריאליסטית לפי זווית האור
+        currentZ -= 1.5; // התקדמות בעומק בכל דגימה (מדמה תנועת רובוט)
 
+        // עדכון התצוגה הדיגיטלית בסרגל העליון
         document.getElementById('display-width').innerText = Math.round(totalWidth);
         document.getElementById('display-height').innerText = Math.round(B);
         document.getElementById('display-depth').innerText = (Math.abs(currentZ) / 10).toFixed(1);
     }
 
+    /**
+     * פונקציית toggleScanning:
+     * מנהלת את מצב המערכת - הפעלה/עצירה של הרובוט וסנכרון מול בסיס הנתונים.
+     */
     function toggleScanning() {
         const btn = document.getElementById('stopBtn');
         if (!isScanning) {
             isScanning = true;
-            database.ref('toAltera').set(192);
+            // שליחת ערך 192 (בינארית 11000000) - מצב אוטו' + התחלת סריקה
+            database.ref('toAltera').set(192); 
             btn.innerHTML = '<i class="bi bi-pause-fill"></i>';
             btn.className = 'fab btn-stop';
         } else {
             isScanning = false;
-            database.ref('toAltera').set(0);
+            database.ref('toAltera').set(0); // שליחת פקודת עצירה לרובוט
             btn.innerHTML = '<i class="bi bi-play-fill"></i>';
             btn.className = 'fab btn-start';
         }
     }
 
+    /**
+     * האזנה לשינויים ב-Firebase:
+     * פונקציה זו מופעלת בכל פעם שה-Altera מעדכנת את דגימות החיישנים.
+     */
     database.ref('fromAltera').on('value', (snapshot) => {
         const data = snapshot.val();
         if (data && isScanning) {
             const a = parseFloat(data.A), b = parseFloat(data.B), c = parseFloat(data.C);
+            // רק אם הערכים תקינים (גדולים מ-0), נבצע סרטוט של השכבה החדשה
             if (a > 0 || b > 0 || c > 0) drawSolidLayer(a, b, c);
         }
     });
 
+    // התחלה אוטומטית של הסריקה ברגע שהדף מוכן (חוויית משתמש חלקה)
     window.onload = () => { if (!isScanning) toggleScanning(); };
 
+    /**
+     * לולאת האנימציה (The Game Loop):
+     * מרנדרת את הסצנה מחדש בכל פריים (60 פעמים בשנייה)
+     */
     function animate() {
         requestAnimationFrame(animate);
-        controls.update();
-        renderer.render(scene, camera);
+        controls.update(); // עדכון מצב המצלמה (עבור ה-Damping)
+        renderer.render(scene, camera); // ציור הסצנה
     }
     animate();
 
+    // התאמה דינמית של ה-Canvas לשינויי גודל חלון או סיבוב הטלפון
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
