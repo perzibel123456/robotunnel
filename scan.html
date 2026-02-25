@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>סריקה תלת-מימדית - ROBOTUNNEL</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -14,59 +14,59 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <style>
-        body { background-color: #f8f9fa; margin: 0; overflow: hidden; font-family: sans-serif; }
+        body { background-color: #f8f9fa; margin: 0; overflow: hidden; font-family: sans-serif; touch-action: none; }
         #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100vh; background: #0b0f14; }
         
-        /* פאנל מידע אופטימלי למובייל */
-        .info-panel { 
+        /* סרגל נתונים עליון דק - לא מפריע לאגודלים */
+        .telemetry-bar { 
             position: absolute; 
+            top: 60px; /* ממש מתחת ל-Navbar */
+            left: 0;
+            right: 0;
             z-index: 10; 
-            background: rgba(20, 20, 20, 0.85); /* שקיפות מוגברת כדי לראות את המודל דרך הפאנל */
-            color: #e0e0e0; 
-            border-radius: 15px; 
-            border: 1px solid rgba(255, 193, 7, 0.5); /* מסגרת עדינה יותר */
+            background: rgba(0, 0, 0, 0.6); /* חצי שקוף */
+            backdrop-filter: blur(5px); /* אפקט טשטוש יוקרתי */
+            color: #fff; 
+            padding: 5px 15px;
+            border-bottom: 1px solid rgba(255, 193, 7, 0.3);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .data-point { text-align: center; }
+        .data-label { font-size: 0.7rem; color: #ffc107; text-transform: uppercase; }
+        .val { font-family: monospace; font-size: 1.1rem; font-weight: bold; color: #00f2ff; }
+
+        /* כפתור צף קטן לעצירה - בצד כדי לא להפריע */
+        .fab-stop {
+            position: absolute;
+            bottom: 30px;
+            left: 20px;
+            z-index: 20;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: 0.3s;
         }
 
-        /* מצב מחשב: פאנל בצד */
         @media (min-width: 768px) {
-            .info-panel { 
-                top: 85px; 
-                right: 20px; 
-                width: 260px; 
-                padding: 15px;
-            }
+            .telemetry-bar { top: 70px; padding: 10px 30px; }
+            .val { font-size: 1.4rem; }
         }
-
-        /* מצב טלפון: פאנל קטן וצר בתחתית */
-        @media (max-width: 767px) {
-            .info-panel { 
-                bottom: 15px; 
-                left: 10px; 
-                right: 10px; 
-                padding: 10px; /* הקטנת הריווח הפנימי */
-                min-width: 0;
-            }
-            .val { font-size: 1.3rem !important; } /* הקטנת המספרים */
-            .data-label { font-size: 0.8rem; } /* הקטנת הכותרות */
-            h4 { display: none; } /* הסתרת הכותרת "נתוני סריקה" בטלפון כדי לחסוך מקום */
-        }
-
-        .val { color: #00f2ff; font-weight: bold; font-family: monospace; font-size: 1.6rem; display: block; }
-        .data-label { color: #aaa; }
-        .btn-custom { font-weight: bold; width: 100%; border: none; padding: 8px; border-radius: 10px; }
-        .btn-stop { background-color: #dc3545; color: white; }
-        .btn-success { background-color: #198754; color: white; }
     </style>
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow">
-  <div class="container">
-    <a class="navbar-brand d-flex align-items-center fw-bold" href="index.html">
-      <img src="logo.png" alt="Logo" width="40" class="ms-2"> ROBOTUNNEL
-    </a>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow-sm">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="index.html">ROBOTUNNEL</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -74,100 +74,95 @@
       <ul class="navbar-nav ms-auto">
         <li class="nav-item"><a class="nav-link" href="index.html">בית</a></li>
         <li class="nav-item"><a class="nav-link" href="control.html">שליטה</a></li>
-        <li class="nav-item"><a class="nav-link active" href="scan.html">סריקה</a></li>
       </ul>
     </div>
   </div>
 </nav>
 
-<div id="canvas-container"></div>
-
-<div class="info-panel text-center">
-    <h4>נתוני סריקה</h4>
-    <div class="row g-2 align-items-center">
-        <div class="col-4 col-md-12">
-            <div class="data-label">רוחב</div>
-            <span id="display-width" class="val">0</span>
-        </div>
-        <div class="col-4 col-md-12">
-            <div class="data-label">גובה</div>
-            <span id="display-height" class="val">0</span>
-        </div>
-        <div class="col-4 col-md-12">
-            <div class="d-flex gap-1">
-                <button id="stopBtn" class="btn-custom btn-success" onclick="toggleScanning()">
-                    <i class="bi bi-play-fill"></i>
-                </button>
-                <button class="btn-custom btn-secondary" onclick="location.reload()">
-                    <i class="bi bi-arrow-clockwise"></i>
-                </button>
-            </div>
-        </div>
+<div class="telemetry-bar">
+    <div class="data-point">
+        <div class="data-label">רוחב</div>
+        <span id="display-width" class="val">0</span><small>cm</small>
+    </div>
+    <div class="data-point">
+        <div class="data-label">גובה</div>
+        <span id="display-height" class="val">0</span><small>cm</small>
+    </div>
+    <div class="data-point">
+        <div class="data-label">עומק</div>
+        <span id="display-depth" class="val">0</span><small>m</small>
     </div>
 </div>
+
+<button id="stopBtn" class="fab-stop btn-success" onclick="toggleScanning()">
+    <i class="bi bi-play-fill"></i>
+</button>
+
+<div id="canvas-container"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     /**
-     * הסברים על הלוגיקה (Comments):
+     * הסברים על הקוד (Documentation):
      */
 
-    // 1. אתחול Firebase - תקשורת מול הרובוט
+    // 1. הגדרות Firebase - תקשורת מול ה-ESP32 וה-Altera
     const firebaseConfig = { databaseURL: "https://rubotunnel-default-rtdb.firebaseio.com", projectId: "rubotunnel" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // 2. הגדרות מנוע גרפי Three.js
+    // 2. אתחול מנוע גרפי Three.js
     const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
     
-    // מצלמה בפרספקטיבה - Near=0.1, Far=2000 מאפשר לראות מנהרה ארוכה מאוד
+    // מצלמה רחבה - PerspectiveCamera מאפשרת תחושת עומק במנהרה
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     container.appendChild(renderer.domElement);
 
-    // OrbitControls - מאפשר למשתמש לסובב את המודל ב-360 מעלות
+    // controls - מאפשר להזיז את המודל בנגיעה (Touch) במסך
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    camera.position.set(100, 150, 300); // נקודת מבט רחוקה כברירת מחדל
+    camera.position.set(0, 10, 20); // נקודת מבט התחלתית נוחה
     controls.update();
 
-    // הוספת תאורה לסצנה
-    scene.add(new THREE.AmbientLight(0xffffff, 0.5)); // אור סביבתי
-    const pointLight = new THREE.PointLight(0x00f2ff, 1); // אור ממוקד בצבע טורקיז
+    // הוספת תאורה דינמית
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5)); 
+    const pointLight = new THREE.PointLight(0x00f2ff, 1);
     camera.add(pointLight); 
     scene.add(camera);
 
-    // הגדרת מבנה המנהרה (BufferGeometry) לביצועים מהירים
+    // יצירת מבנה המנהרה (Geometry)
     const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(300000); // מערך XYZ לנקודות
-    const indices = []; // מערך חיבור הנקודות למשולשים
+    const positions = new Float32Array(300000); 
+    const indices = []; 
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     
     const material = new THREE.MeshPhongMaterial({ color: 0x00f2ff, side: THREE.DoubleSide, flatShading: true, transparent: true, opacity: 0.7 });
     const tunnelMesh = new THREE.Mesh(geometry, material);
     scene.add(tunnelMesh);
     
-    // רשת עזר (Grid) גדולה מאוד
+    // רשת עזר (Grid) על הרצפה
     scene.add(new THREE.GridHelper(1000, 100, 0x444444, 0x222222));
 
     let lastPoints = null, currentZ = 0, vertexIdx = 0, isScanning = false;
-    const ROBOT_WIDTH = 25; // רוחב הרובוט לחישוב המנהרה
+    const ROBOT_WIDTH = 25;
 
     /**
-     * פונקציית השרטוט: drawSolidLayer
-     * מחשבת קשת פרבולית על בסיס מרחקי החיישנים (A,B,C) ורוחב הרובוט.
+     * פונקציית השרטוט המרכזית: drawSolidLayer
+     * לוקחת את הנתונים מהחיישנים ומייצרת "פרוסת" מנהרה חדשה.
      */
     function drawSolidLayer(A, B, C) {
-        const resolution = 20; // 20 נקודות לקשת
-        const totalWidth = A + C + ROBOT_WIDTH; // רוחב המנהרה הכולל
-        const centerShift = (A - C) / 2; // היסט הרובוט מהמרכז
+        const resolution = 20; 
+        const totalWidth = A + C + ROBOT_WIDTH; 
+        const centerShift = (A - C) / 2;
         let newPoints = [];
 
+        // חישוב נקודות XYZ עבור הקשת (פרבולה)
         for (let i = 0; i <= resolution; i++) {
             const t = i / resolution;
-            const x = -(totalWidth / 2) + (totalWidth * t) + centerShift; // מיקום X
-            const y = B * (1 - Math.pow((x - centerShift) / (totalWidth / 2 + 0.0001), 2)); // מיקום Y (פרבולה)
+            const x = -(totalWidth / 2) + (totalWidth * t) + centerShift;
+            const y = B * (1 - Math.pow((x - centerShift) / (totalWidth / 2 + 0.0001), 2));
             
             positions[vertexIdx * 3] = x;
             positions[vertexIdx * 3 + 1] = Math.max(0, y);
@@ -176,7 +171,7 @@
             vertexIdx++;
         }
 
-        // חיבור השכבה הנוכחית לקודמתה ליצירת "קיר"
+        // חיבור השכבה הנוכחית לשכבה הקודמת בעזרת משולשים
         if (lastPoints !== null) {
             const startOld = vertexIdx - (resolution + 1) * 2;
             const startNew = vertexIdx - (resolution + 1);
@@ -189,30 +184,34 @@
 
         lastPoints = newPoints;
         geometry.attributes.position.needsUpdate = true; // עדכון כרטיס המסך
-        geometry.computeVertexNormals(); // חישוב הצללה
-        currentZ -= 2; // התקדמות בעומק המנהרה
+        geometry.computeVertexNormals(); // חישוב הצללה ריאליסטית
+        currentZ -= 1.5; // התקדמות בעומק
 
-        // עדכון המספרים בפאנל
-        document.getElementById('display-width').innerText = totalWidth.toFixed(0);
-        document.getElementById('display-height').innerText = B.toFixed(0);
+        // עדכון הסרגל העליון
+        document.getElementById('display-width').innerText = Math.round(totalWidth);
+        document.getElementById('display-height').innerText = Math.round(B);
+        document.getElementById('display-depth').innerText = (Math.abs(currentZ) / 10).toFixed(1);
     }
 
+    /**
+     * פונקציית toggleScanning: מעבר בין מצב עבודה למצב עצירה
+     */
     function toggleScanning() {
         const btn = document.getElementById('stopBtn');
         if (!isScanning) {
             isScanning = true;
-            database.ref('toAltera').set(192); // מצב אוטו' + סריקה
+            database.ref('toAltera').set(192); // פקודה: מצב אוטומטי + התחלת סריקה
             btn.innerHTML = '<i class="bi bi-pause-fill"></i>';
-            btn.classList.replace('btn-success', 'btn-stop');
+            btn.className = 'fab-stop btn-danger'; // הופך לאדום בעצירה
         } else {
             isScanning = false;
-            database.ref('toAltera').set(0); // עצירה
+            database.ref('toAltera').set(0); // עצירה מוחלטת
             btn.innerHTML = '<i class="bi bi-play-fill"></i>';
-            btn.classList.replace('btn-stop', 'btn-success');
+            btn.className = 'fab-stop btn-success';
         }
     }
 
-    // קבלת מידע מ-Firebase
+    // האזנה לנתונים מ-Firebase (Altera)
     database.ref('fromAltera').on('value', (snapshot) => {
         const data = snapshot.val();
         if (data && isScanning) {
@@ -221,10 +220,14 @@
         }
     });
 
+    // התחלה אוטומטית כשהדף עולה
     window.onload = () => { if (!isScanning) toggleScanning(); };
+
+    // לולאת הרינדור (60fps)
     function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
     animate();
 
+    // התאמה לשינוי גודל מסך
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
