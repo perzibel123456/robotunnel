@@ -74,9 +74,15 @@ window.updateScanSystem = function(type) {
         currentScanRun = (currentScanRun === 64) ? 0 : 64;
         
         if (currentScanRun === 64) {
-            btnRun.innerText = "סורק... (64)";
-            btnRun.classList.add('active-mode');
-        } else {
+    btnRun.innerText = "סורק... (64)";
+    btnRun.classList.add('active-mode');
+    // השהייה של 800 מילי-שניות (0.8 שניות) לפני המעבר לדף
+    // הזמן הזה מאפשר ל-sendUpdate() לסיים את השליחה ל-Firebase
+    setTimeout(() => {
+        window.location.href = "scan.html";
+    }, 800); 
+    }
+        else {
             btnRun.innerText = "הפעל סריקה (0)";
             btnRun.classList.remove('active-mode');
         }
