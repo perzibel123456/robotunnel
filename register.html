@@ -10,6 +10,11 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <link rel="stylesheet" href="style.css">
+
+        <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    
 </head>
 <body>
 
@@ -30,9 +35,9 @@
         <li class="nav-item"><a class="nav-link" href="contact.html">צור קשר</a></li>
         <li class="nav-item"><a class="btn btn-warning btn-sm ms-lg-3 text-dark fw-bold" href="control.html">ממשק שליטה</a></li>
         <li class="nav-item border-top border-lg-0 mt-2 mt-lg-0">
-        <a class="nav-link text-danger fw-bold" href="#" id="logoutBtn">
-            <i class="bi bi-box-arrow-right"></i> התנתקות
-        </a>
+            <a class="nav-link text-danger fw-bold" href="#" id="logoutBtn" onclick="logout()">
+                <i class="bi bi-box-arrow-right"></i> התנתקות
+            </a>
        </li>
     </ul>
     </div>
@@ -76,6 +81,26 @@
         
     </div>
 </div>
+
+
+
+<script>
+function logout() {
+    firebase.auth().signOut().then(() => {
+        // --- התנתקות הצליחה ---
+        console.log("המשתמש התנתק בהצלחה");
+        
+        // העברה לדף ההתחברות (שנה את הכתובת אם הדף שלך נקרא אחרת)
+        window.location.href = "register.html"; 
+        
+    }).catch((error) => {
+        // --- אירעה שגיאה ---
+        console.error("שגיאה בהתנתקות:", error);
+        alert("אירעה שגיאה בזמן ההתנתקות.");
+    });
+}
+</script>
+
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
