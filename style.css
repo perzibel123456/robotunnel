@@ -1,204 +1,366 @@
 /* ========================================= */
-/* --- 1. EXISTING GLOBAL STYLES --- */
+/* --- 1. הגדרות גלובליות (Global Styles) --- */
 /* ========================================= */
 body {
-    background-color: #f8f9fa;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    padding-top: 80px; /* Space for the fixed navbar */
+    font-family: 'Assistant', 'Segoe UI', sans-serif;
+    background-color: #f4f7f6;
+    color: #333;
+    /* הגדרות אלו חשובות כדי שהתוכן לא יוסתר תחת ה-Navbar הקבוע */
+    padding-top: 80px; 
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    user-select: none; /* Prevent text selection while driving */
-    -webkit-user-select: none;
 }
 
-h1, h2 {
-    font-weight: bold;
+h1, h2, h3 { 
+    font-weight: bold; 
+}
+
+/* כותרות משנה עם פס צהוב (אודות, גלריה) */
+h2.section-title, h3.section-title { 
+    color: #1a1a1a; 
+    border-right: 4px solid #ffc107; 
+    padding-right: 15px; 
+    margin-bottom: 25px; 
+    display: inline-block;
 }
 
 footer {
     font-size: 0.9rem;
 }
 
-/* Photo Hover Effects (Keep existing) */
+.navbar-brand img { 
+    margin-left: 10px; 
+    transition: 0.3s;
+}
+
+/* כפתורים מותאמים אישית */
+.btn-primary { background-color: #0d6efd; border-color: #0d6efd; font-weight: bold; }
+.btn-primary:hover { background-color: #0b5ed7; border-color: #0a58ca; }
+.btn-success { background-color: #198754; border-color: #198754; font-weight: bold; }
+.btn-success:hover { background-color: #157347; border-color: #146c43; }
+
+
+/* ========================================= */
+/* --- 2. דף הבית (Index) --- */
+/* ========================================= */
+.hero {
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
+                url('https://images.unsplash.com/photo-1505159947324-47d04bc4464a?q=80&w=1920&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    color: white;
+    padding: 100px 0;
+    text-align: center;
+    border-bottom: 5px solid #ffc107; 
+    margin-top: -80px; /* קיזוז הפדינג הגלובלי כדי שהתמונה תתחיל מההתחלה */
+    padding-top: 150px;
+}
+
+.feature-box {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    transition: 0.3s;
+    height: 100%;
+}
+
+.feature-box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.icon-circle {
+    width: 60px;
+    height: 60px;
+    background-color: #e9ecef;
+    color: #0d6efd;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 1.5rem;
+}
+
+.btn-main {
+    padding: 12px 30px;
+    font-weight: bold;
+    border-radius: 50px;
+    transition: 0.3s;
+}
+
+
+/* ========================================= */
+/* --- 3. התחברות והרשמה (Register) --- */
+/* ========================================= */
+.auth-card { 
+    background: white; 
+    border-radius: 20px; 
+    padding: 40px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
+    border: none; 
+    transition: transform 0.3s ease;
+}
+
+.auth-card:hover { 
+    transform: translateY(-5px); 
+}
+
+.form-title { 
+    font-weight: bold; 
+    margin-bottom: 25px; 
+    position: relative; 
+    padding-bottom: 10px; 
+}
+
+.form-title::after { 
+    content: ""; 
+    position: absolute; 
+    bottom: 0; 
+    right: 50%; 
+    transform: translateX(50%); 
+    width: 50px; 
+    height: 3px; 
+    background: #ffc107; 
+}
+
+.error-msg { 
+    display: none; 
+    margin-top: 15px; 
+    font-size: 0.9rem; 
+    border-radius: 10px;
+}
+
+
+/* ========================================= */
+/* --- 4. אודות (About) --- */
+/* ========================================= */
+.student-card { 
+    background: #1a1a1a; 
+    color: white; 
+    border-radius: 15px; 
+    padding: 30px; 
+    transition: 0.3s; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-top: 4px solid #ffc107;
+}
+
+.student-card:hover { 
+    transform: translateY(-5px); 
+}
+
+.student-card h4 { 
+    color: #ffc107; 
+    font-weight: bold; 
+}
+
+.content-section { 
+    background: white; 
+    padding: 30px; 
+    border-radius: 15px; 
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
+    margin-bottom: 30px; 
+    line-height: 1.8; 
+}
+
+.highlight-box { 
+    border-right: 5px solid #0d6efd; 
+    padding: 15px 20px; 
+    background: #f0f7ff; 
+    margin: 20px 0; 
+    border-radius: 0 10px 10px 0;
+    font-style: italic;
+}
+
+
+/* ========================================= */
+/* --- 5. גלריה (Gallery) --- */
+/* ========================================= */
+.photo-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    background: #fff;
+    padding: 5px; 
+}
+
 .photo {
     width: 100%;
-    height: 100%;
-    transition: 500ms;
-}
-.photo:hover {
-    transform: scale(1.2);      
-}
-
-/* Existing Video/Control Box styles (Keeping these just in case) */
-.video-box {
-    background-color: #000000;
-    width: 100%;
-    aspect-ratio: 16/9;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 1.5rem;
+    height: 250px; 
+    object-fit: cover; 
     border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    transition: transform 0.5s ease;
 }
 
-.control-box {
-    border-radius: 15px;
-    background-color: #fff;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    padding: 30px;
+.photo-container:hover .photo {
+    transform: scale(1.08);
 }
 
-.arrow {
-    font-size: 2rem;
-    user-select: none;
-}
-
-/* Card & Form Styles (Keep existing) */
-.min-vh-100 { min-height: 100vh; }
-
-.card {
-    border-radius: 15px;
-    padding: 30px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    border: none;
-    transition: transform 0.3s ease-in-out;
-}
-.card:hover { transform: translateY(-5px); }
-
-.form-title { margin-bottom: 25px; font-weight: 700; }
-.alert { margin-top: 15px; font-size: 0.9em; }
-
-/* Custom Buttons */
-.btn-primary {
-    background-color: #007bff;
-    border-color: #007bff;
-    font-weight: bold;
-}
-.btn-primary:hover {
-    background-color: #0056b3;
-    border-color: #0056b3;
-}
-.btn-success {
-    background-color: #28a745;
-    border-color: #28a745;
-    font-weight: bold;
-}
-.btn-success:hover {
-    background-color: #1e7e34;
-    border-color: #1e7e34;
-}
 
 /* ========================================= */
-/* --- 2. NEW ROBOT CONTROLLER STYLES --- */
+/* --- 6. ממשק שליטה ובקרה (Control) --- */
 /* ========================================= */
-
-/* Main Video Wrapper (The Big Screen) */
-#video-wrapper {
-    width: 100%;
-    height: 80vh; /* Big height as requested */
-    background-color: #000;
-    border-radius: 8px;
-    overflow: hidden;
-    position: relative;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+.controller-wrapper {
+    background-color: #1a1a1a; 
+    color: #e0e0e0;
+    border-radius: 15px; 
+    padding: 20px; 
+    margin-top: 20px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
 }
 
-#ipcam {
-    width: 100%;
-    height: 100%;
-    object-fit: contain; /* Ensures video fits without stretching */
+.control-panel {
+    background: #2a2a2a; 
+    padding: 20px; 
+    border-radius: 15px;
+    margin-bottom: 20px; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
+    text-align: center;
 }
 
-/* Mobile Controller Buttons */
-.mobile-btn {
-    width: 100%;
-    height: 60px;
-    font-size: 24px;
-    font-weight: 900;
-    border-radius: 12px;
-    box-shadow: 0 4px 0px #0056b3; /* Darker blue shadow */
+.d-pad {
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 10px;
+    max-width: 180px; 
+    margin: 0 auto; 
+    direction: ltr; 
+}
+
+.d-pad button { 
+    height: 60px; 
+    font-size: 1.2rem; 
+    font-weight: bold; 
+    border-radius: 8px; 
     touch-action: manipulation;
 }
-.mobile-btn:active {
-    box-shadow: 0 2px 0px #0056b3;
-    transform: translateY(2px);
+
+#mob-W { grid-column: 2; grid-row: 1; }
+#mob-A { grid-column: 1; grid-row: 2; }
+#mob-S { grid-column: 2; grid-row: 2; }
+#mob-D { grid-column: 3; grid-row: 2; }
+
+.active-mode { 
+    background-color: #ffc107 !important; 
+    color: black !important;
+    box-shadow: 0 0 15px rgba(255, 193, 7, 0.6) !important;
+    border-color: #ffc107 !important;
 }
 
-.d-pad-container { max-width: 280px; margin: 0 auto; }
-
-/* Helpers for layout */
-.video-section, .controls-section { width: 100%; }
-
-
-/* ========================================= */
-/* --- 3. PHONE LANDSCAPE MODE (GAME CONSOLE) --- */
-/* ========================================= */
+/* מצב נייד רוחבי - קונסולת משחקים */
 @media only screen and (max-height: 600px) and (orientation: landscape) {
-    
-    body {
+    .controller-body {
         height: 100vh;
-        overflow: hidden; /* No scrolling in game mode */
-        padding: 0 !important;
+        overflow: hidden; 
+        padding: 0 !important; 
         margin: 0;
     }
 
-    /* Hide standard web elements */
-    .navbar, .desktop-hint, footer, .form-title, .card { display: none !important; }
-    .container { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
-
-    /* Side-by-Side Layout */
-    .main-layout {
-        display: flex !important;
-        flex-direction: row !important;
-        height: 100vh;
-        width: 100vw;
-        margin-top: 0 !important;
+    .controller-body .navbar, 
+    .controller-body footer { 
+        display: none !important; 
     }
 
-    /* LEFT: Video Area (Big) */
-    .video-section {
-        width: 75%;
-        height: 100%;
-        background: #000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    .controller-body .container { 
+        max-width: 100% !important; 
+        margin: 0 !important; 
+        padding: 0 !important; 
     }
-    #video-wrapper {
-        height: 100% !important; 
-        width: 100% !important;
-        margin: 0 !important;
-        border-radius: 0 !important;
-        box-shadow: none;
-    }
-
-    /* RIGHT: Controls Area (Small strip) */
-    .controls-section {
-        width: 25%;
-        height: 100%;
-        background: #f8f9fa;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        padding: 5px;
-        border-left: 2px solid #ccc;
-    }
-
-    /* Adjust Buttons for tight space */
-    .d-pad-container {
-        display: block !important; 
-        width: 100%;
-        transform: scale(0.8);
-    }
-    
-    .btn-group { margin-bottom: 5px !important; }
 }
+
+
+/* ========================================= */
+/* --- 7. סריקה תלת מימדית (Scan) --- */
+/* ========================================= */
+.scan-body { 
+    background-color: #0b0f14; 
+    margin: 0; 
+    overflow: hidden; 
+    touch-action: none; 
+    padding-top: 0; /* ביטול הרווח בסריקה כדי שהקנבס ימלא את המסך */
+}
+
+#canvas-container { 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100vh; 
+    z-index: 1; 
+}
+
+.scan-body .navbar { 
+    z-index: 100; 
+    background-color: rgba(33, 37, 41, 0.95) !important; 
+    backdrop-filter: blur(10px); 
+}
+
+.telemetry-overlay { 
+    position: absolute; 
+    top: 85px; 
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10; 
+    background: rgba(11, 15, 20, 0.75); 
+    backdrop-filter: blur(10px); 
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    border-radius: 15px;
+    padding: 10px 20px;
+    display: flex;
+    gap: 20px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    max-width: 95%;
+}
+
+.stat-box { text-align: center; min-width: 60px; }
+.stat-label { font-size: 0.65rem; color: #ffc107; text-transform: uppercase; margin-bottom: 2px; }
+.stat-value { font-family: 'Courier New', monospace; font-weight: bold; color: #00f2ff; }
+
+.control-fabs { 
+    position: absolute; 
+    bottom: 30px; 
+    left: 20px; 
+    z-index: 20; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 15px; 
+}
+
+.fab { 
+    width: 55px; 
+    height: 55px; 
+    border-radius: 50%; 
+    border: none; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 1.5rem; 
+    color: white; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.6); 
+    transition: 0.2s; 
+}
+
+.btn-stop { background: #dc3545; }
+.btn-start { background: #198754; }
+.btn-reset { background: #6c757d; }
+
+@media (max-width: 768px) {
+    .scan-body .navbar-brand { font-size: 1.1rem; }
+    .scan-body .navbar-brand img { width: 40px; }
+    .stat-value { font-size: 1.1rem; }
+    .telemetry-overlay { gap: 15px; padding: 8px 15px; }
+}
+
+@media (min-width: 769px) {
+    .scan-body .navbar-brand { font-size: 1.5rem; }
+    .scan-body .navbar-brand img { width: 60px; }
+    .stat-value { font-size: 1.5rem; }
+    .telemetry-overlay { gap: 40px; }
+}
+
+/* תצוגה מותנית לפי חיבור - ינוהל דרך JS */
+#scan, #control { display: none; }
