@@ -9,6 +9,11 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   
   <link rel="stylesheet" href="style.css">
+
+
+      <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 </head>
 <body>
 
@@ -66,21 +71,34 @@
   </div>
 </section>
 
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-  // פונקציית התנתקות מקורית
-  function logout() {
-    firebase.auth().signOut().then(() => {
-        console.log("המשתמש התנתק בהצלחה");
-        window.location.href = "register.html"; 
-    }).catch((error) => {
-        console.error("שגיאה בהתנתקות:", error);
-        alert("אירעה שגיאה בזמן ההתנתקות.");
-    });
-  }
+    // 1. הגדרות החיבור לפיירבייס (זה מה שהיה חסר בדפים האחרים!)
+    const firebaseConfig = {
+        apiKey: "AIzaSyB7EtdQumROer8xuzWu9wffjEvQz8XdbNU",
+        authDomain: "rubotunnel.firebaseapp.com",
+        databaseURL: "https://rubotunnel-default-rtdb.firebaseio.com",
+        projectId: "rubotunnel",
+        storageBucket: "rubotunnel.firebasestorage.app",
+        messagingSenderId: "211308486888",
+        appId: "1:211308486888:web:9d8e8b7594fd646898a95d"
+    };
+
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+
+    // 2. פונקציית ההתנתקות המקורית שלך
+    function logout() {
+        firebase.auth().signOut().then(() => {
+            console.log("המשתמש התנתק בהצלחה");
+            window.location.href = "register.html"; 
+        }).catch((error) => {
+            console.error("שגיאה בהתנתקות:", error);
+            alert("אירעה שגיאה בזמן ההתנתקות.");
+        });
+    }
+
 
   // --- הסקריפט של WhatsApp שביקשת להוסיף ---
   const WHATSAPP_NUMBER = "972536261026"; 
