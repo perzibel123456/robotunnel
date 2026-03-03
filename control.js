@@ -1,5 +1,5 @@
 // ==========================================
-// 1. הגדרות והתחברות (CONFIGURATION)
+// 1. הגדרות והתחברות ל-Firebase
 // ==========================================
 const firebaseConfig = {
     apiKey: "AIzaSyB7EtdQumROer8xuzWu9wffjEvQz8XdbNU",
@@ -11,34 +11,37 @@ const firebaseConfig = {
     appId: "1:211308486888:web:9d8e8b7594fd646898a95d"
 };
 
+// אתחול Firebase רק אם עדיין לא הופעל
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 const db = firebase.database();
 
 // ==========================================
-// 2. משתנים גלובליים - חשוב להשאיר בחוץ
+// 2. משתנים גלובליים לניהול מצב הרובוט
+// כל משתנה מייצג "ביט" מתוך בית (Byte) אחד שיישלח לאלטרה.
 // ==========================================
-let currentScanMode = 0;   // Bit 7 (128)
-let currentScanRun = 0;    // Bit 6 (64)
-let currentServo = 0;      // Bits 5-4
-let currentSpeed = 0;      // Bit 3 (8)
-let currentDirection = 0;  // Bits 2-0
+let currentScanMode = 0;   // Bit 7 (משקלו 128) - מצב אוטומטי לעומת ידני
+let currentScanRun = 0;    // Bit 6 (משקלו 64) - הפעלת סריקה
+let currentServo = 0;      // Bits 5-4 - זווית מצלמה
+let currentSpeed = 0;      // Bit 3 (משקלו 8) - מהירות מנועים
+let currentDirection = 0;  // Bits 2-0 - כיווני נסיעה
 
 const statusText = document.getElementById('status-display');
 
 // ==========================================
-// 3. לוגיקה מרכזית ושליחה
+// 3. לוגיקה מרכזית ושליחת פקודות
 // ==========================================
 
+// פונקציה לחיבור כל הערכים יחד ושליחה לדאטאבייס של פיירבייס
 function sendUpdate() {
     // חישוב הסכום הסופי של כל הביטים
     let finalCommand = currentScanMode + currentScanRun + currentServo + currentSpeed + currentDirection;
     
-    // עדכון ב-Firebase
+    // עדכון ב-Firebase תחת הנתיב '/toAltera'
     db.ref('/toAltera').set(finalCommand);
     
-    // עדכון תצוגה במסך (אם קיים אלמנט)
+    // עדכון תצוגה במסך (אם קיים אלמנט כזה ב-HTML)
     const display = document.getElementById('status-display');
     if(display) display.innerText = `Cmd: ${finalCommand}`;
     
@@ -47,6 +50,7 @@ function sendUpdate() {
 
 /**
  * פונקציה לעדכון מערכת הסריקה - מוודא שהיא גלובלית (window)
+ * שולטת על החלפה בין מצב ידני למצב סריקה
  */
 window.updateScanSystem = function(type) {
     const btnMode = document.getElementById('btn-scan-mode');
@@ -57,16 +61,16 @@ window.updateScanSystem = function(type) {
         currentScanMode = (currentScanMode === 128) ? 0 : 128;
         
         if (currentScanMode === 128) {
-            btnMode.innerText = "מצב אוטומטי (128)";
+            btnMode.innerText = "מצב סריקה אוטומטי ";
             btnMode.classList.add('active-mode');
             btnRun.disabled = false; // פותח את לחצן הסריקה
         } else {
-            btnMode.innerText = "מצב ידני (0)";
+            btnMode.innerText = "מצב נסיעה ידנית ";
             btnMode.classList.remove('active-mode');
             btnRun.disabled = true; // נועל את לחצן הסריקה
             currentScanRun = 0; // מכבה סריקה אם עברנו לידני
             btnRun.classList.remove('active-mode');
-            btnRun.innerText = "הפעל סריקה (0)";
+            btnRun.innerText = "הפעל סריקה ועבור לתצוגה)";
         }
     } 
     else if (type === 'run') {
@@ -74,16 +78,16 @@ window.updateScanSystem = function(type) {
         currentScanRun = (currentScanRun === 64) ? 0 : 64;
         
         if (currentScanRun === 64) {
-    btnRun.innerText = "סורק... (64)";
-    btnRun.classList.add('active-mode');
-    // השהייה של 800 מילי-שניות (0.8 שניות) לפני המעבר לדף
-    // הזמן הזה מאפשר ל-sendUpdate() לסיים את השליחה ל-Firebase
-    setTimeout(() => {
-        window.location.href = "scan.html";
-    }, 800); 
-    }
+            btnRun.innerText = "סורק... ";
+            btnRun.classList.add('active-mode');
+            // השהייה של 600 מילי-שניות (0.6 שניות) לפני המעבר לדף
+            // הזמן הזה מאפשר ל-sendUpdate() לסיים את השליחה ל-Firebase
+            setTimeout(() => {
+                window.location.href = "scan.html";
+            }, 600); 
+        }
         else {
-            btnRun.innerText = "הפעל סריקה (0)";
+            btnRun.innerText = "הפעל סריקה)";
             btnRun.classList.remove('active-mode');
         }
     }
@@ -91,6 +95,7 @@ window.updateScanSystem = function(type) {
 };
 
 // --- ניהול מהירות ---
+// פונקציה לבחירת מהירות נסיעה (עצירה או נסיעה)
 function handleSpeedToggle(val) {
     if (val === 8) {
         currentSpeed = (currentSpeed === 8) ? 0 : 8;
@@ -101,6 +106,7 @@ function handleSpeedToggle(val) {
     sendUpdate();
 }
 
+// עדכון צבעי הכפתורים של המהירות במסך
 function updateSpeedUI() {
     const stopBtn = document.getElementById('sp-stop');
     const goBtn = document.getElementById('sp-go');
@@ -117,6 +123,7 @@ function updateSpeedUI() {
 }
 
 // --- ניהול סרוו ותנועה ---
+// פונקציה להזזת המצלמה שמאלה/ימינה/מרכז
 function setServo(val, btn) {
     currentServo = val;
     document.querySelectorAll('.btn-servo').forEach(b => b.classList.remove('active-mode'));
@@ -124,6 +131,7 @@ function setServo(val, btn) {
     sendUpdate();
 }
 
+// פונקציה לקביעת כיוון הנסיעה
 function setMove(val) {
     currentDirection = val;
     sendUpdate();
@@ -149,6 +157,7 @@ document.addEventListener('DOMContentLoaded', function() {
     Object.keys(moveMap).forEach(id => {
         const btn = document.getElementById(id);
         if(btn) {
+            // מאזין ללחיצה (התחלת נסיעה) ולעזיבה (עצירה)
             const start = (e) => { e.preventDefault(); setMove(moveMap[id]); btn.classList.add('active-mode'); };
             const stop = (e) => { e.preventDefault(); setMove(0); btn.classList.remove('active-mode'); };
             btn.addEventListener('mousedown', start);
@@ -158,34 +167,86 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-// משתנה גלובלי למצב הפנס
-let flashActive = 0; 
+    // משתנה גלובלי למצב הפנס
+    let flashActive = 0; 
 
-const flashBtn = document.getElementById('btn-flash');
+    const flashBtn = document.getElementById('btn-flash');
 
-if (flashBtn) {
-    flashBtn.addEventListener('click', () => {
-        // הפיכת המצב (אם היה 0 יהיה 1, אם היה 1 יהיה 0)
-        flashActive = (flashActive === 0) ? 1 : 0;
-        
-        // עדכון ב-Firebase
-        db.ref('/flash').set(flashActive);
-        
-        // עדכון ויזואלי של הכפתור
-        if (flashActive === 1) {
-            flashBtn.innerText = "פנס דולק";
-            flashBtn.classList.add('active-mode');
-        } else {
-            flashBtn.innerText = "הפעל פנס";
-            flashBtn.classList.remove('active-mode');
-        }
-        
-        console.log("Flash state:", flashActive);
+    if (flashBtn) {
+        flashBtn.addEventListener('click', () => {
+            // הפיכת המצב (אם היה 0 יהיה 1, אם היה 1 יהיה 0)
+            flashActive = (flashActive === 0) ? 1 : 0;
+            
+            // עדכון ב-Firebase של מצב הפנס תחת 'flash'
+            db.ref('/flash').set(flashActive);
+            
+            // עדכון ויזואלי של הכפתור
+            if (flashActive === 1) {
+                flashBtn.innerText = "פנס דולק";
+                flashBtn.classList.add('active-mode');
+            } else {
+                flashBtn.innerText = "הפעל פנס";
+                flashBtn.classList.remove('active-mode');
+            }
+            
+            console.log("Flash state:", flashActive);
+        });
+    }
+
+    // הגנה על העמוד - בדיקה אם המשתמש מחובר
+    firebase.auth().onAuthStateChanged((user)=> {
+        if(!user) {
+            console.log(" not user")
+            window.location.href = "/register.html"
+            document.getElementById("scan").style.display = "none"
+            document.getElementById("control").style.display = "none"
+
+        }else{
+            console.log("user")
+             document.getElementById("scan").style.display = "block"
+             document.getElementById("control").style.display = "block"
+        }    
     });
-}
-    // מצלמה
+
+    // האזנה ללחיצה על כפתור התנתקות
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault(); // מונע מעבר דף רגיל של קישור
+
+            firebase.auth().signOut().then(() => {
+                // התנתקות הצליחה
+                console.log("User signed out");
+                // הפניה לדף הכניסה או דף הבית
+                window.location.href = "register.html"; 
+            }).catch((error) => {
+                // טיפול בשגיאות
+                console.error("Error signing out: ", error);
+                alert("אירעה שגיאה בהתנתקות");
+            });
+        });
+    }
+
+    // מצלמה - משיכת כתובת ה-IP הדינאמית של ה-ESP32-CAM מ-Firebase
     db.ref("/camIp").on("value", snap => {
         const ip = snap.val();
         if (ip) document.getElementById("ipcam").src = "http://" + ip + ":81/stream";
     });
 });
+
+// פונקציית התנתקות גלובלית (נוספה לכאן כדי למנוע שגיאות בקריאה מה-HTML)
+function logout() {
+    firebase.auth().signOut().then(() => {
+        // --- התנתקות הצליחה ---
+        console.log("המשתמש התנתק בהצלחה");
+        
+        // העברה לדף ההתחברות (שנה את הכתובת אם הדף שלך נקרא אחרת)
+        window.location.href = "register.html"; 
+        
+    }).catch((error) => {
+        // --- אירעה שגיאה ---
+        console.error("שגיאה בהתנתקות:", error);
+        alert("אירעה שגיאה בזמן ההתנתקות.");
+    });
+}
