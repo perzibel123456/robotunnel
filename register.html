@@ -1,113 +1,146 @@
-<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>כניסה למערכת - ROBOTUNNEL</title>
+// ==========================================
+// 1. הגדרות Firebase
+// ==========================================
+const firebaseConfig = {
+    apiKey: "AIzaSyB7EtdQumROer8xuzWu9wffjEvQz8XdbNU",
+    authDomain: "rubotunnel.firebaseapp.com",
+    databaseURL: "https://rubotunnel-default-rtdb.firebaseio.com",
+    projectId: "rubotunnel",
+    storageBucket: "rubotunnel.firebasestorage.app",
+    messagingSenderId: "211308486888",
+    appId: "1:211308486888:web:9d8e8b7594fd646898a95d"
+};
 
-    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;700&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+// אתחול Firebase
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
 
-    <style>
-        body { font-family: 'Assistant', sans-serif; background-color: #f4f7f6; }
+const auth = firebase.auth();
+const db = firebase.database();
+
+// ==========================================
+// 2. לוגיקת הרשמה והתחברות
+// ==========================================
+
+// פונקציית הרשמה
+function sign() {
+    const email = document.getElementById("email_signup").value;
+    const password = document.getElementById("password_signup").value;
+    const errorDiv = document.getElementById("errorSignUp");
+
+    // איפוס תצוגה
+    errorDiv.style.display = "none";
+
+    if (email === "" || password === "") {
+        showLocalError("errorSignUp", "נא למלא אימייל וסיסמה.");
+        return;
+    }
+
+    auth.createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            // שמירת נתונים ב-DB (אופציונלי)
+            db.ref('users/' + userCredential.user.uid).set({
+                email: email,
+                lastLogin: Date.now()
+            });
+            window.location.href = "index.html";
+        })
+        .catch((error) => {
+            showLocalError("errorSignUp", translateError(error.code));
+        });
+}
+
+// פונקציית התחברות
+function logIn() {
+    const email = document.getElementById("email_login").value;
+    const password = document.getElementById("password_login").value;
+    const errorDiv = document.getElementById("errorLogin");
+
+    // איפוס תצוגה
+    errorDiv.style.display = "none";
+
+    if (email === "" || password === "") {
+        showLocalError("errorLogin", "נא למלא אימייל וסיסמה.");
+        return;
+    }
+
+    auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+            window.location.href = "index.html";
+        })
+        .catch((error) => {
+            showLocalError("errorLogin", translateError(error.code));
+        });
+}
+
+// ==========================================
+// 3. פונקציות עזר לשגיאות
+// ==========================================
+
+function showLocalError(elementId, message) {
+    const errorDiv = document.getElementById(elementId);
+    if (errorDiv) {
+        errorDiv.innerText = message;
+        errorDiv.style.display = "block";
+    }
+}
+
+function translateError(code) {
+    switch (code) {
+        case 'auth/email-already-in-use': return "האימייל כבר רשום במערכת.";
+        case 'auth/weak-password': return "הסיסמה חלשה מדי (מינימום 6 תווים).";
+        case 'auth/user-not-found': return "לא נמצא משתמש עם האימייל הזה.";
+        case 'auth/wrong-password': return "סיסמה שגויה.";
+        case 'auth/invalid-email': return "כתובת אימייל לא תקינה.";
+        default: return "שגיאה בכניסה: " + code;
+    }
+}
+
+// ==========================================
+// 4. מאזיני התחברות והתנתקות
+// ==========================================
+
+firebase.auth().onAuthStateChanged((user)=> {
+    if(!user) {
+        console.log(" not user");
         
-        /* כרטיסי הרשמה והתחברות */
-        .auth-card { 
-            background: white; 
-            border-radius: 20px; 
-            padding: 40px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
-            border: none; 
-            transition: transform 0.3s ease;
-        }
-        .auth-card:hover { transform: translateY(-5px); }
-
-        /* כותרת עם הפס הצהוב של הפרויקט */
-        .form-title { font-weight: bold; margin-bottom: 25px; position: relative; padding-bottom: 10px; }
-        .form-title::after { 
-            content: ""; position: absolute; bottom: 0; right: 50%; 
-            transform: translateX(50%); width: 50px; height: 3px; background: #ffc107; 
-        }
-
-        /* תיבות שגיאה - מוסתרות כברירת מחדל */
-        .error-msg { 
-            display: none; 
-            margin-top: 15px; 
-            font-size: 0.9rem; 
-            border-radius: 10px;
-        }
-    </style>
-</head>
-<body>
-
-
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow">
-  <div class="container">
-    <a class="navbar-brand d-flex align-items-center fw-bold" href="index.html">
-      <img src="logo.png" alt="Logo" width="60" class="ms-2"> ROBOTUNNEL
-    </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link active" href="register.html">כניסה</a></li>
-        <li class="nav-item"><a class="nav-link " href="index.html">בית</a></li>
-        <li class="nav-item"><a class="nav-link" href="about.html">אודות</a></li>
-        <li class="nav-item"><a class="nav-link" href="gallery.html">גלריה</a></li>
-        <li class="nav-item"><a class="nav-link" href="contact.html">צור קשר</a></li>
-        <li class="nav-item"><a class="btn btn-warning btn-sm ms-lg-3 text-dark fw-bold" href="control.html">ממשק שליטה</a></li>
-      </ul>
-    </div>
-  </div>
-</nav>
-
-
-<div class="container d-flex align-items-center justify-content-center min-vh-100 pt-5">
-    <div class="row w-100 g-4 py-5">
+        // הגנה מפני קריסה אם האלמנטים חסרים בדף
+        const scanElem = document.getElementById("scan");
+        const controlElem = document.getElementById("control");
         
-        <div class="col-md-6">
-            <div class="auth-card">
-                <h2 class="form-title text-center text-primary">הרשמה</h2>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">אימייל למשתמש חדש</label>
-                    <input type="email" class="form-control" id="email_signup" placeholder="name@example.com">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">בחר סיסמה</label>
-                    <input type="password" class="form-control" id="password_signup" placeholder="לפחות 6 תווים">
-                </div>
-                <div id="errorSignUp" class="alert alert-danger error-msg"></div>
-                <button type="button" class="btn btn-primary btn-lg w-100 mt-3 fw-bold" onclick="sign()">צור חשבון</button>
-            </div>
-        </div>
+        if (scanElem) scanElem.style.display = "none";
+        if (controlElem) controlElem.style.display = "none";
 
-        <div class="col-md-6">
-            <div class="auth-card" style="border-top: 5px solid #198754;">
-                <h2 class="form-title text-center text-success">התחברות</h2>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">אימייל</label>
-                    <input type="email" class="form-control" id="email_login" placeholder="name@example.com">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">סיסמה</label>
-                    <input type="password" class="form-control" id="password_login" placeholder="הכנס סיסמה">
-                </div>
-                <div id="errorLogin" class="alert alert-danger error-msg"></div>
-                <button class="btn btn-success btn-lg w-100 mt-3 fw-bold" onclick="logIn()">כניסה למערכת</button>
-            </div>
-        </div>
+    } else {
+        console.log("user");
         
-    </div>
-</div>
+        const scanElem = document.getElementById("scan");
+        const controlElem = document.getElementById("control");
+        
+        if (scanElem) scanElem.style.display = "block";
+        if (controlElem) controlElem.style.display = "block";
+    }    
+});
 
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+// האזנה ללחיצה על כפתור התנתקות
+document.addEventListener('DOMContentLoaded', function() {
+    const logoutBtn = document.getElementById('logoutBtn');
 
-<script src="register.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault(); // מונע מעבר דף רגיל של קישור
 
-</body>
-</html>
+            firebase.auth().signOut().then(() => {
+                // התנתקות הצליחה
+                console.log("User signed out");
+                // הפניה לדף הכניסה או דף הבית
+                window.location.href = "register.html"; 
+            }).catch((error) => {
+                // טיפול בשגיאות
+                console.error("Error signing out: ", error);
+                alert("אירעה שגיאה בהתנתקות");
+            });
+        });
+    }
+});
