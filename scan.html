@@ -174,13 +174,12 @@
         lastPoints = newPoints;
         geometry.attributes.position.needsUpdate = true; // מאותת לכרטיס המסך על עדכון הנתונים
         geometry.computeVertexNormals(); // חישוב כיוון ההארה כדי שהמודל ייראה תלת-מימדי
-        currentZ -= 0.5; // התקדמות בעומק בכל דגימה שמגיעה
+        currentZ -= 5; // התקדמות בעומק בכל דגימה שמגיעה
 
         // עדכון התצוגה הדיגיטלית בסרגל העליון (Telemetry)
         document.getElementById('display-width').innerText = Math.round(totalWidth);
         document.getElementById('display-height').innerText = Math.round(B);
-        document.getElementById('display-depth').innerText = (Math.abs(currentZ) / 10).toFixed(1);
-    }
+document.getElementById('display-depth').innerText = (Math.abs(currentZ) / 100).toFixed(2);    }
 
     /**
      * פונקציית toggleScanning:
