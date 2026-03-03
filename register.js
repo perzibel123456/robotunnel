@@ -96,3 +96,51 @@ function translateError(code) {
         default: return "שגיאה בכניסה: " + code;
     }
 }
+
+// ==========================================
+// 4. מאזיני התחברות והתנתקות
+// ==========================================
+
+firebase.auth().onAuthStateChanged((user)=> {
+    if(!user) {
+        console.log(" not user");
+        
+        // הגנה מפני קריסה אם האלמנטים חסרים בדף
+        const scanElem = document.getElementById("scan");
+        const controlElem = document.getElementById("control");
+        
+        if (scanElem) scanElem.style.display = "none";
+        if (controlElem) controlElem.style.display = "none";
+
+    } else {
+        console.log("user");
+        
+        const scanElem = document.getElementById("scan");
+        const controlElem = document.getElementById("control");
+        
+        if (scanElem) scanElem.style.display = "block";
+        if (controlElem) controlElem.style.display = "block";
+    }    
+});
+
+// האזנה ללחיצה על כפתור התנתקות
+document.addEventListener('DOMContentLoaded', function() {
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault(); // מונע מעבר דף רגיל של קישור
+
+            firebase.auth().signOut().then(() => {
+                // התנתקות הצליחה
+                console.log("User signed out");
+                // הפניה לדף הכניסה או דף הבית
+                window.location.href = "register.html"; 
+            }).catch((error) => {
+                // טיפול בשגיאות
+                console.error("Error signing out: ", error);
+                alert("אירעה שגיאה בהתנתקות");
+            });
+        });
+    }
+});
