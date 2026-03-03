@@ -45,17 +45,33 @@ footer {
 /* --- 2. דף הבית (Index) --- */
 /* ========================================= */
 .hero {
-    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
-                url('https://images.unsplash.com/photo-1505159947324-47d04bc4464a?q=80&w=1920&auto=format&fit=crop');
+    /* הגדרות הרקע (ללא שינוי) */
+    background-color: #343a40; 
+    background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
+                      url('mainbackground.png'); 
     background-size: cover;
     background-position: center;
     color: white;
-    padding: 100px 0;
     text-align: center;
     border-bottom: 5px solid #ffc107; 
-    margin-top: -80px; /* קיזוז הפדינג הגלובלי כדי שהתמונה תתחיל מההתחלה */
-    padding-top: 150px;
+    margin-top: -80px; 
+    
+    /* --- השינויים להגדלת שטח ה-Hero --- */
+    
+    /* קובע את הגובה. 80vh אומר "80% מהמסך". 
+       אם תרצה שזה יתפוס את כל המסך בדיוק, שנה ל- 100vh */
+    min-height: 80vh; 
+    
+    /* הוספת Flexbox כדי למרכז את התוכן ישר באמצע הגובה החדש */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    
+    /* פדינג קל כדי שהתוכן לא יגע בקצוות במסכים ממש קטנים */
+    padding: 20px; 
 }
+
 
 .feature-box {
     background: white;
