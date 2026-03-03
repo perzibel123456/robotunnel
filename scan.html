@@ -1,191 +1,240 @@
-// ==========================================
-// 1. הגדרות והתחברות (CONFIGURATION)
-// ==========================================
-const firebaseConfig = {
-    apiKey: "AIzaSyB7EtdQumROer8xuzWu9wffjEvQz8XdbNU",
-    authDomain: "rubotunnel.firebaseapp.com",
-    databaseURL: "https://rubotunnel-default-rtdb.firebaseio.com",
-    projectId: "rubotunnel",
-    storageBucket: "rubotunnel.firebasestorage.app",
-    messagingSenderId: "211308486888",
-    appId: "1:211308486888:web:9d8e8b7594fd646898a95d"
-};
-
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-const db = firebase.database();
-
-// ==========================================
-// 2. משתנים גלובליים - חשוב להשאיר בחוץ
-// ==========================================
-let currentScanMode = 0;   // Bit 7 (128)
-let currentScanRun = 0;    // Bit 6 (64)
-let currentServo = 0;      // Bits 5-4
-let currentSpeed = 0;      // Bit 3 (8)
-let currentDirection = 0;  // Bits 2-0
-
-const statusText = document.getElementById('status-display');
-
-// ==========================================
-// 3. לוגיקה מרכזית ושליחה
-// ==========================================
-
-function sendUpdate() {
-    // חישוב הסכום הסופי של כל הביטים
-    let finalCommand = currentScanMode + currentScanRun + currentServo + currentSpeed + currentDirection;
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>סריקה תלת-מימדית - ROBOTUNNEL</title>
     
-    // עדכון ב-Firebase
-    db.ref('/toAltera').set(finalCommand);
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
-    // עדכון תצוגה במסך (אם קיים אלמנט)
-    const display = document.getElementById('status-display');
-    if(display) display.innerText = `Cmd: ${finalCommand}`;
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
-    console.log("Sent Command:", finalCommand);
-}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body class="scan-body">
 
-/**
- * פונקציה לעדכון מערכת הסריקה - מוודא שהיא גלובלית (window)
- */
-window.updateScanSystem = function(type) {
-    const btnMode = document.getElementById('btn-scan-mode');
-    const btnRun = document.getElementById('btn-scan-run');
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center fw-bold" href="index.html">
+      <img src="logo.png" alt="Logo"> ROBOTUNNEL
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link" href="index.html">בית</a></li>
+        <li class="nav-item"><a class="nav-link" href="control.html">ממשק שליטה</a></li>
+        <li class="nav-item"><a class="nav-link active" href="scan.html">SCAN</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
 
-    if (type === 'mode') {
-        // Toggle בין 0 ל-128
-        currentScanMode = (currentScanMode === 128) ? 0 : 128;
-        
-        if (currentScanMode === 128) {
-            btnMode.innerText = "מצב סריקה אוטומטי ";
-            btnMode.classList.add('active-mode');
-            btnRun.disabled = false; // פותח את לחצן הסריקה
+<div class="telemetry-overlay">
+    <div class="stat-box">
+        <div class="stat-label">רוחב</div>
+        <div class="stat-value"><span id="display-width">0</span><small>cm</small></div>
+    </div>
+    <div class="stat-box">
+        <div class="stat-label">גובה</div>
+        <div class="stat-value"><span id="display-height">0</span><small>cm</small></div>
+    </div>
+    <div class="stat-box">
+        <div class="stat-label">מרחק</div>
+        <div class="stat-value"><span id="display-depth">0</span><small>m</small></div>
+    </div>
+</div>
+
+<div class="control-fabs">
+    <button id="stopBtn" class="fab btn-start" onclick="toggleScanning()">
+        <i class="bi bi-play-fill"></i>
+    </button>
+    <button class="fab btn-reset" onclick="location.reload()">
+        <i class="bi bi-arrow-clockwise"></i>
+    </button>
+</div>
+
+<div id="canvas-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // --- 0. פונקציית התנתקות למקרה הצורך (למרות שהוסתרה חלקית בניווט פה) ---
+    function logout() {
+        firebase.auth().signOut().then(() => {
+            console.log("המשתמש התנתק בהצלחה");
+            window.location.href = "register.html"; 
+        }).catch((error) => {
+            console.error("שגיאה בהתנתקות:", error);
+            alert("אירעה שגיאה בזמן ההתנתקות.");
+        });
+    }
+
+    /**
+     * --- 1. אתחול תקשורת Firebase ---
+     * חיבור לבסיס הנתונים בזמן אמת כדי לקבל את נתוני החיישנים מה-Altera.
+     */
+    const firebaseConfig = { databaseURL: "https://rubotunnel-default-rtdb.firebaseio.com", projectId: "rubotunnel" };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    /**
+     * --- 2. אתחול מנוע גרפי Three.js ---
+     */
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene(); // יצירת ה"עולם" הווירטואלי
+    
+    // מצלמת PerspectiveCamera מדמה ראייה אנושית - עצמים רחוקים נראים קטנים יותר
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+    
+    // WebGLRenderer הוא המנוע שמשתמש בכרטיס המסך (GPU) לציור המודל
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // אופטימיזציה למסכי Retina מודרניים
+    container.appendChild(renderer.domElement);
+
+    // OrbitControls מאפשר למשתמש לסובב, להזיז ולבצע זום למודל עם העכבר או האצבעות
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    camera.position.set(0, 250, 450); // מיקום התחלתי של המצלמה (מבט על/אלכסוני)
+    controls.enableDamping = true; // מוסיף תחושת אינרציה לסיבוב המסך
+    controls.update();
+
+    // הוספת תאורה: Ambient להארה כללית ו-PointLight שצמודה למצלמה (מדמה פנס)
+    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+    const pointLight = new THREE.PointLight(0x00f2ff, 1.2);
+    camera.add(pointLight);
+    scene.add(camera);
+
+    /** * --- 3. גיאומטריית המנהרה ---
+     * משתמשים ב-BufferGeometry לביצועים מקסימליים. אנחנו יוצרים מודל דינמי
+     * שמתעדכן בשיטת "זרימה" - כל דגימה מהרובוט מוסיפה שכבה (פרוסה) חדשה.
+     */
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(300000); // מערך קואורדינטות XYZ לנקודות
+    const indices = []; // מערך המגדיר איך לחבר נקודות למשולש
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    
+    // חומר (Material): צבע טורקיז, מגיב לאור, ורואים אותו משני הצדדים
+    const material = new THREE.MeshPhongMaterial({ color: 0x00f2ff, side: THREE.DoubleSide, flatShading: true, transparent: true, opacity: 0.75 });
+    const tunnelMesh = new THREE.Mesh(geometry, material);
+    scene.add(tunnelMesh);
+
+    // GridHelper מוסיף את הרשת על הרצפה - עוזר למפעיל להבין קנה מידה ומרחק במרחב
+    scene.add(new THREE.GridHelper(1000, 100, 0x444444, 0x222222));
+
+    // משתני ניהול מצב לסרטוט הדינמי
+    let lastPoints = null, currentZ = 0, vertexIdx = 0, isScanning = false;
+    const ROBOT_WIDTH = 18; // רוחב פיזי של הרובוט (משמש לכיול המדידה מול החיישנים)
+
+    /**
+     * פונקציית drawSolidLayer:
+     * מקבלת את 3 המרחקים מהחיישנים והופכת אותם לפרוסה תלת-מימדית של המנהרה.
+     */
+    function drawSolidLayer(A, B, C) {
+        const resolution = 20; // כמות הנקודות המרכיבות את חצי-המעגל (רזולוציה)
+        const totalWidth = A + C + ROBOT_WIDTH; // חישוב רוחב המנהרה האמיתי
+        const centerShift = (A - C) / 2; // היסט המרכז במידה והרובוט קרוב יותר לקיר אחד מהשני
+        let newPoints = [];
+
+        // לולאת חישוב נקודות הקשת בשימוש בנוסחת פרבולה
+        for (let i = 0; i <= resolution; i++) {
+            const t = i / resolution; 
+            const x = -(totalWidth / 2) + (totalWidth * t) + centerShift;
+            // נוסחה ריבועית לחישוב קימור התקרה על בסיס גובה החיישן B
+            const y = B * (1 - Math.pow((x - centerShift) / (totalWidth / 2 + 0.0001), 2));
+            
+            // הזנת הנתונים למערך הזיכרון של Three.js
+            positions[vertexIdx * 3] = x;
+            positions[vertexIdx * 3 + 1] = Math.max(0, y); // מוודא שהרצפה לא יורדת מתחת לציר ה-0
+            positions[vertexIdx * 3 + 2] = currentZ;
+            newPoints.push(new THREE.Vector3(x, y+10, currentZ));
+            vertexIdx++;
+        }
+
+        /**
+         * אלגוריתם חיבור שכבות (Stitching):
+         * מחבר את השכבה הנוכחית לשכבה הקודמת בעזרת יצירת מרובעים (מורכבים משני משולשים).
+         */
+        if (lastPoints !== null) {
+            const startOld = vertexIdx - (resolution + 1) * 2;
+            const startNew = vertexIdx - (resolution + 1);
+            for (let i = 0; i < resolution; i++) {
+                indices.push(startOld + i, startNew + i, startOld + i + 1);
+                indices.push(startNew + i, startNew + i + 1, startOld + i + 1);
+            }
+            geometry.setIndex(indices);
+        }
+
+        lastPoints = newPoints;
+        geometry.attributes.position.needsUpdate = true; // מאותת לכרטיס המסך על עדכון הנתונים
+        geometry.computeVertexNormals(); // חישוב כיוון ההארה כדי שהמודל ייראה תלת-מימדי
+        currentZ -= 0.5; // התקדמות בעומק בכל דגימה שמגיעה
+
+        // עדכון התצוגה הדיגיטלית בסרגל העליון (Telemetry)
+        document.getElementById('display-width').innerText = Math.round(totalWidth);
+        document.getElementById('display-height').innerText = Math.round(B);
+        document.getElementById('display-depth').innerText = (Math.abs(currentZ) / 10).toFixed(1);
+    }
+
+    /**
+     * פונקציית toggleScanning:
+     * מנהלת את מצב המערכת - הפעלה/עצירה של הרובוט וסנכרון הפקודות מול פיירבייס.
+     */
+    function toggleScanning() {
+        const btn = document.getElementById('stopBtn');
+        if (!isScanning) {
+            isScanning = true;
+            // שליחת ערך 192 (בינארית 11000000) לאלטרה - מצב אוטו' + התחלת נסיעה/סריקה
+            database.ref('toAltera').set(192); 
+            btn.innerHTML = '<i class="bi bi-pause-fill"></i>';
+            btn.className = 'fab btn-stop';
         } else {
-            btnMode.innerText = "מצב נסיעה ידנית ";
-            btnMode.classList.remove('active-mode');
-            btnRun.disabled = true; // נועל את לחצן הסריקה
-            currentScanRun = 0; // מכבה סריקה אם עברנו לידני
-            btnRun.classList.remove('active-mode');
-            btnRun.innerText = "הפעל סריקה ועבור לתצוגה)";
-        }
-    } 
-    else if (type === 'run') {
-        // Toggle בין 0 ל-64
-        currentScanRun = (currentScanRun === 64) ? 0 : 64;
-        
-        if (currentScanRun === 64) {
-    btnRun.innerText = "סורק... ";
-    btnRun.classList.add('active-mode');
-    // השהייה של 800 מילי-שניות (0.8 שניות) לפני המעבר לדף
-    // הזמן הזה מאפשר ל-sendUpdate() לסיים את השליחה ל-Firebase
-    setTimeout(() => {
-        window.location.href = "scan.html";
-    }, 600); 
-    }
-        else {
-            btnRun.innerText = "הפעל סריקה)";
-            btnRun.classList.remove('active-mode');
+            isScanning = false;
+            database.ref('toAltera').set(0); // עוצר את הרובוט לחלוטין
+            btn.innerHTML = '<i class="bi bi-play-fill"></i>';
+            btn.className = 'fab btn-start';
         }
     }
-    sendUpdate();
-};
 
-// --- ניהול מהירות ---
-function handleSpeedToggle(val) {
-    if (val === 8) {
-        currentSpeed = (currentSpeed === 8) ? 0 : 8;
-    } else {
-        currentSpeed = 0;
-    }
-    updateSpeedUI();
-    sendUpdate();
-}
-
-function updateSpeedUI() {
-    const stopBtn = document.getElementById('sp-stop');
-    const goBtn = document.getElementById('sp-go');
-    if(!stopBtn || !goBtn) return;
-
-    stopBtn.classList.remove('active-mode');
-    goBtn.classList.remove('active-mode');
-
-    if (currentSpeed === 8) {
-        goBtn.classList.add('active-mode');
-    } else {
-        stopBtn.classList.add('active-mode');
-    }
-}
-
-// --- ניהול סרוו ותנועה ---
-function setServo(val, btn) {
-    currentServo = val;
-    document.querySelectorAll('.btn-servo').forEach(b => b.classList.remove('active-mode'));
-    btn.classList.add('active-mode');
-    sendUpdate();
-}
-
-function setMove(val) {
-    currentDirection = val;
-    sendUpdate();
-}
-
-// ==========================================
-// 4. מאזינים לאירועים (Listeners)
-// ==========================================
-
-document.addEventListener('DOMContentLoaded', function() {
-    // מהירות
-    document.querySelectorAll('.btn-speed').forEach(btn => {
-        btn.addEventListener('click', () => handleSpeedToggle(parseInt(btn.getAttribute('data-speed'))));
-    });
-
-    // סרוו
-    document.querySelectorAll('.btn-servo').forEach(btn => {
-        btn.addEventListener('click', () => setServo(parseInt(btn.getAttribute('data-servo')), btn));
-    });
-
-    // ניווט WASD (W=1, S=2, A=3, D=4)
-    const moveMap = { 'mob-W': 1, 'mob-S': 2, 'mob-A': 3, 'mob-D': 4 };
-    Object.keys(moveMap).forEach(id => {
-        const btn = document.getElementById(id);
-        if(btn) {
-            const start = (e) => { e.preventDefault(); setMove(moveMap[id]); btn.classList.add('active-mode'); };
-            const stop = (e) => { e.preventDefault(); setMove(0); btn.classList.remove('active-mode'); };
-            btn.addEventListener('mousedown', start);
-            btn.addEventListener('mouseup', stop);
-            btn.addEventListener('touchstart', start);
-            btn.addEventListener('touchend', stop);
+    /**
+     * האזנה רציפה לשינויים ב-Firebase:
+     * מופעלת בכל פעם שה-Altera מעדכנת את משתנה fromAltera במסד הנתונים.
+     */
+    database.ref('fromAltera').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data && isScanning) {
+            const a = parseFloat(data.A), b = parseFloat(data.B), c = parseFloat(data.C);
+            // מניעת שגיאות: מסרטט רק אם יש ערכים תקינים מהחיישן
+            if (a > 0 || b > 0 || c > 0) drawSolidLayer(a, b, c);
         }
     });
 
-// משתנה גלובלי למצב הפנס
-let flashActive = 0; 
+    // התחלת סריקה אוטומטית ברגע שהדף נטען
+    window.onload = () => { if (!isScanning) toggleScanning(); };
 
-const flashBtn = document.getElementById('btn-flash');
+    /**
+     * לולאת האנימציה המרכזית:
+     * רצה ללא הפסקה ומציירת את המסך 60 פעמים בשנייה.
+     */
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update(); // מעדכן את החלקות סיבוב המצלמה
+        renderer.render(scene, camera); // הפעולה המציירת בפועל את הגרפיקה
+    }
+    animate();
 
-if (flashBtn) {
-    flashBtn.addEventListener('click', () => {
-        // הפיכת המצב (אם היה 0 יהיה 1, אם היה 1 יהיה 0)
-        flashActive = (flashActive === 0) ? 1 : 0;
-        
-        // עדכון ב-Firebase
-        db.ref('/flash').set(flashActive);
-        
-        // עדכון ויזואלי של הכפתור
-        if (flashActive === 1) {
-            flashBtn.innerText = "פנס דולק";
-            flashBtn.classList.add('active-mode');
-        } else {
-            flashBtn.innerText = "הפעל פנס";
-            flashBtn.classList.remove('active-mode');
-        }
-        
-        console.log("Flash state:", flashActive);
+    // התאמה דינמית של הציור במידה וגודל מסך הטלפון/מחשב משתנה (Responsive Canvas)
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
     });
-}
-    // מצלמה
-    db.ref("/camIp").on("value", snap => {
-        const ip = snap.val();
-        if (ip) document.getElementById("ipcam").src = "http://" + ip + ":81/stream";
-    });
-});
+</script>
+</body>
+</html>
