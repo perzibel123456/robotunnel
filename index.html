@@ -10,6 +10,10 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
     <link rel="stylesheet" href="style.css">
+
+        <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 </head>
 <body>
 
@@ -30,9 +34,9 @@
         <li class="nav-item"><a class="nav-link" href="contact.html">צור קשר</a></li>
         <li class="nav-item"><a class="btn btn-warning btn-sm ms-lg-3 text-dark fw-bold" href="control.html">ממשק שליטה</a></li>
         <li class="nav-item border-top border-lg-0 mt-2 mt-lg-0">
-        <a class="nav-link text-danger fw-bold" href="#" id="logoutBtn" onclick="logout()">
-            <i class="bi bi-box-arrow-right"></i> התנתקות
-        </a>
+        <a class="nav-link text-danger fw-bold" href="#" id="logoutBtn" onclick="logout(); return false;">
+    <i class="bi bi-box-arrow-right"></i> התנתקות
+</a>
        </li>
       </ul>
     </div>
@@ -102,32 +106,26 @@
     </div>
 </footer>
 
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
 <script>
-    // מאזין למצב התחברות
-    firebase.auth().onAuthStateChanged((user)=> {
-        if(!user) {
-            console.log("not user");
-            window.location.href = "register.html";
-            
-            // בדיקה שהאלמנטים קיימים לפני שמסתירים אותם כדי למנוע שגיאות
-            const scanElem = document.getElementById("scan");
-            const controlElem = document.getElementById("control");
-            if (scanElem) scanElem.style.display = "none";
-            if (controlElem) controlElem.style.display = "none";
+    
 
-        } else {
-            console.log("user");
-            const scanElem = document.getElementById("scan");
-            const controlElem = document.getElementById("control");
-            if (scanElem) scanElem.style.display = "block";
-            if (controlElem) controlElem.style.display = "block";
-        }
-    }); // הוספתי את סוגר הסיום שהיה חסר
+    // 1. הגדרות החיבור לפיירבייס (זה מה שהיה חסר בדפים האחרים!)
+    const firebaseConfig = {
+        apiKey: "AIzaSyB7EtdQumROer8xuzWu9wffjEvQz8XdbNU",
+        authDomain: "rubotunnel.firebaseapp.com",
+        databaseURL: "https://rubotunnel-default-rtdb.firebaseio.com",
+        projectId: "rubotunnel",
+        storageBucket: "rubotunnel.firebasestorage.app",
+        messagingSenderId: "211308486888",
+        appId: "1:211308486888:web:9d8e8b7594fd646898a95d"
+    };
 
-    // פונקציית התנתקות
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+
+    // 2. פונקציית ההתנתקות המקורית שלך
     function logout() {
         firebase.auth().signOut().then(() => {
             console.log("המשתמש התנתק בהצלחה");
