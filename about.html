@@ -8,65 +8,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
-    <style>
-        body {
-            font-family: 'Assistant', sans-serif;
-            background-color: #f4f7f6;
-            color: #333;
-        }
-
-        /* כותרות עם פס הנדסי צהוב */
-        h2, h3 { 
-            color: #1a1a1a; 
-            font-weight: bold; 
-            border-right: 4px solid #ffc107; 
-            padding-right: 15px; 
-            margin-bottom: 25px; 
-        }
-
-        /* כרטיסי הסטודנטים - עיצוב כהה ומקצועי */
-        .student-card { 
-            background: #1a1a1a; 
-            color: white; 
-            border-radius: 15px; 
-            padding: 30px; 
-            transition: 0.3s; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            border-top: 4px solid #ffc107;
-        }
-        .student-card:hover { transform: translateY(-5px); }
-        .student-card h4 { color: #ffc107; font-weight: bold; }
-
-        /* קטעי תוכן בלבן עם צל עדין */
-        .content-section { 
-            background: white; 
-            padding: 30px; 
-            border-radius: 15px; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
-            margin-bottom: 30px; 
-            line-height: 1.8; 
-        }
-
-        /* תיבת דגש */
-        .highlight-box { 
-            border-right: 5px solid #0d6efd; 
-            padding: 15px 20px; 
-            background: #f0f7ff; 
-            margin: 20px 0; 
-            border-radius: 0 10px 10px 0;
-            font-style: italic;
-        }
-
-        .navbar-brand img { margin-left: 10px; }
-    </style>
+    
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow">
   <div class="container">
     <a class="navbar-brand d-flex align-items-center fw-bold" href="index.html">
-      <img src="logo.png" width="60" class="ms-2"> ROBOTUNNEL
+      <img src="logo.png" width="60" class="ms-2" alt="Logo"> ROBOTUNNEL
     </a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
@@ -79,6 +29,12 @@
         <li class="nav-item"><a class="nav-link" href="gallery.html">גלריה</a></li>
         <li class="nav-item"><a class="nav-link" href="contact.html">צור קשר</a></li>
         <li class="nav-item"><a class="btn btn-warning btn-sm ms-lg-3 text-dark fw-bold px-3" href="control.html">ממשק שליטה</a></li>
+        
+        <li class="nav-item border-top border-lg-0 mt-2 mt-lg-0">
+            <a class="nav-link text-danger fw-bold" href="#" id="logoutBtn" onclick="logout()">
+                <i class="bi bi-box-arrow-right"></i> התנתקות
+            </a>
+       </li>
       </ul>
     </div>
   </div>
@@ -96,7 +52,7 @@
     
     <div class="row mb-5">
         <div class="col-12 text-center mb-4">
-            <h3>הצוות המפתח</h3>
+            <h3 class="section-title">הצוות המפתח</h3>
         </div>
         <div class="col-md-6 mb-4">
             <div class="student-card text-center">
@@ -115,7 +71,7 @@
     </div>
 
     <div class="content-section">
-        <h3><i class="bi bi-info-circle ms-2"></i>תקציר</h3>
+        <h3 class="section-title"><i class="bi bi-info-circle ms-2"></i>תקציר</h3>
         <p>
             במסגרת פרויקט הגמר שלנו, פיתחנו גרסה ייחודית של <strong>רובוט ממונע למיפוי מנהרות</strong>. 
             מטרת הרובוט היא ביצוע כניסה ראשונית למנהרה, סריקה, זיהוי ומיפוי מוקדם של תוואי השטח. 
@@ -127,7 +83,7 @@
     </div>
 
     <div class="content-section">
-        <h3><i class="bi bi-shield-exclamation ms-2"></i>הצורך המבצעי</h3>
+        <h3 class="section-title"><i class="bi bi-shield-exclamation ms-2"></i>הצורך המבצעי</h3>
         <p>
             בעשור האחרון נחשף צה"ל לאיום המנהרות ביתר שאת. הלחימה בתוואי כזה היא צפופה, חשוכה וממולכדת.
             עד כה, ההתמודדות הסתמכה על כניסה פיזית של חיילים ללא מידע מוקדם. 
@@ -139,7 +95,7 @@
     </div>
 
     <div class="content-section">
-        <h3><i class="bi bi-cpu ms-2"></i>מפרט טכני</h3>
+        <h3 class="section-title"><i class="bi bi-cpu ms-2"></i>מפרט טכני</h3>
         <div class="table-responsive mt-3">
             <table class="table table-hover align-middle border">
                 <thead class="table-dark">
@@ -168,7 +124,22 @@
     </div>
 </footer>
 
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  // פונקציית התנתקות
+  function logout() {
+    firebase.auth().signOut().then(() => {
+        console.log("המשתמש התנתק בהצלחה");
+        window.location.href = "register.html"; 
+    }).catch((error) => {
+        console.error("שגיאה בהתנתקות:", error);
+        alert("אירעה שגיאה בזמן ההתנתקות.");
+    });
+}
+</script>
 
 </body>
 </html>
