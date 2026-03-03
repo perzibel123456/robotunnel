@@ -9,46 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <style>
-        body {
-            font-family: 'Assistant', sans-serif;
-            background-color: #f4f7f6;
-            color: #333;
-        }
-
-        /* עיצוב תמונות הגלריה */
-        .photo-container {
-            position: relative;
-            overflow: hidden;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            background: #fff;
-            padding: 5px; /* מסגרת דקה לבנה */
-        }
-
-        .photo {
-            width: 100%;
-            height: 250px; 
-            object-fit: cover; 
-            border-radius: 10px;
-            transition: transform 0.5s ease;
-        }
-
-        /* אפקט מעבר עכבר - הגדלה עדינה */
-        .photo-container:hover .photo {
-            transform: scale(1.08);
-        }
-
-        /* כותרת הגלריה עם הפס הצהוב המזוהה עם הפרויקט */
-        h2 { 
-            font-weight: bold; 
-            border-right: 5px solid #ffc107; 
-            padding-right: 15px; 
-            display: inline-block;
-        }
-
-        .navbar-brand img { margin-left: 10px; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -68,6 +29,12 @@
         <li class="nav-item"><a class="nav-link active" href="gallery.html">גלריה</a></li>
         <li class="nav-item"><a class="nav-link" href="contact.html">צור קשר</a></li>
         <li class="nav-item"><a class="btn btn-warning btn-sm ms-lg-3 text-dark fw-bold px-3" href="control.html">ממשק שליטה</a></li>
+   
+        <li class="nav-item border-top border-lg-0 mt-2 mt-lg-0">
+            <a class="nav-link text-danger fw-bold" href="#" id="logoutBtn" onclick="logout()">
+                <i class="bi bi-box-arrow-right"></i> התנתקות
+            </a>
+       </li>
       </ul>
     </div>
   </div>
@@ -77,8 +44,7 @@
 
 <section class="container text-center my-5">
     <header class="mb-5">
-        <h2>תיעוד ויזואלי</h2>
-        <p class="text-muted mt-2">מבט מקרוב על שלבי הפיתוח והניסויים של ROBOTUNNEL</p>
+        <h2 class="section-title">ההשראה שלנו</h2>
     </header>
 
     <div class="row g-4">
@@ -87,20 +53,18 @@
                 <img src="https://thvnext.bing.com/th/id/OIP.L_uvh_ZjC69vv1vSb0asJwHaEK?w=275&h=180&c=7&r=0&o=7&cb=12&dpr=1.3&pid=1.7&rm=3&ucfimg=1" class="photo" alt="פיתוח שלדת הרובוט">
             </div>
         </div> 
-        
         <div class="col-lg-4 col-md-6">
             <div class="photo-container">
                 <img src="https://thvnext.bing.com/th/id/OIP.9JfN5eEVC7YhW8F_jKudjQHaE8?w=279&h=186&c=7&r=0&o=7&cb=12&dpr=1.3&pid=1.7&rm=3&ucfimg=1" class="photo" alt="מערכת החיישנים">
             </div>
         </div>
-
         <div class="col-lg-4 col-md-6">
             <div class="photo-container">
                 <img src="https://thvnext.bing.com/th/id/OIP.hkDjxHkQJqTEYmThqSDe7gHaE2?w=260&h=180&c=7&r=0&o=7&cb=12&dpr=1.3&pid=1.7&rm=3&ucfimg=1" class="photo" alt="ניסוי שטח ראשון">
             </div>
         </div>
+    </div>
 
-  
     <div class="mt-5 py-5 border-top">
         <h3 class="fw-bold mb-4"><i class="bi bi-play-circle-fill text-danger ms-2"></i>הדגמה קיימת</h3>
         <div class="mx-auto shadow-lg rounded-4 overflow-hidden" style="max-width: 850px;">
@@ -122,7 +86,21 @@
     </div>
 </footer>
 
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  function logout() {
+    firebase.auth().signOut().then(() => {
+        console.log("המשתמש התנתק בהצלחה");
+        window.location.href = "register.html"; 
+    }).catch((error) => {
+        console.error("שגיאה בהתנתקות:", error);
+        alert("אירעה שגיאה בזמן ההתנתקות.");
+    });
+}
+</script>
 
 </body>
 </html>
