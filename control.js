@@ -152,20 +152,68 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', () => setServo(parseInt(btn.getAttribute('data-servo')), btn));
     });
 
-    // ניווט WASD (W=1, S=2, A=3, D=4)
-    const moveMap = { 'mob-W': 1, 'mob-S': 2, 'mob-A': 3, 'mob-D': 4 };
-    Object.keys(moveMap).forEach(id => {
-        const btn = document.getElementById(id);
-        if(btn) {
-            // מאזין ללחיצה (התחלת נסיעה) ולעזיבה (עצירה)
-            const start = (e) => { e.preventDefault(); setMove(moveMap[id]); btn.classList.add('active-mode'); };
-            const stop = (e) => { e.preventDefault(); setMove(0); btn.classList.remove('active-mode'); };
-            btn.addEventListener('mousedown', start);
-            btn.addEventListener('mouseup', stop);
-            btn.addEventListener('touchstart', start);
-            btn.addEventListener('touchend', stop);
+
+
+// המיפוי המקורי שלך לכפתורים
+const moveMap = { 'mob-W': 1, 'mob-S': 2, 'mob-A': 3, 'mob-D': 4 };
+
+// 1. טיפול בלחיצות עכבר ומסך מגע (הקוד המקורי שלך)
+Object.keys(moveMap).forEach(id => {
+    const btn = document.getElementById(id);
+    if(btn) {
+        const start = (e) => { e.preventDefault(); setMove(moveMap[id]); btn.classList.add('active-mode'); };
+        const stop = (e) => { e.preventDefault(); setMove(0); btn.classList.remove('active-mode'); };
+        btn.addEventListener('mousedown', start);
+        btn.addEventListener('mouseup', stop);
+        btn.addEventListener('touchstart', start);
+        btn.addEventListener('touchend', stop);
+    }
+});
+
+// ==========================================
+// 2. תוספת: שליטה מלאה מהמקלדת (אנגלית + עברית)
+// ==========================================
+
+// מיפוי מקשי המקלדת לכפתורים הפיזיים במסך
+const keyMap = {
+    'w': 'mob-W', "'": 'mob-W', // W באנגלית או גרש (') בעברית
+    'a': 'mob-A', 'ש': 'mob-A', // A באנגלית או ש' בעברית
+    's': 'mob-S', 'ד': 'mob-S', // S באנגלית או ד' בעברית
+    'd': 'mob-D', 'ג': 'mob-D'  // D באנגלית או ג' בעברית
+};
+
+// מאזין ללחיצה על מקש (תחילת תנועה)
+document.addEventListener('keydown', (e) => {
+    // מונע מהפקודה להישלח שוב ושוב ברצף כשהמפעיל מחזיק את המקש לחוץ
+    if (e.repeat) return; 
+
+    const key = e.key.toLowerCase(); // הופך לאותיות קטנות כדי לתמוך גם ב-Caps Lock
+    const targetBtnId = keyMap[key];
+    
+    if (targetBtnId) {
+        const btn = document.getElementById(targetBtnId);
+        if (btn) {
+            setMove(moveMap[targetBtnId]); // שולח פקודת תנועה
+            btn.classList.add('active-mode'); // מדליק את הכפתור במסך שייראה לחוץ
         }
-    });
+    }
+});
+
+// מאזין לעזיבת המקש (עצירת תנועה)
+document.addEventListener('keyup', (e) => {
+    const key = e.key.toLowerCase();
+    const targetBtnId = keyMap[key];
+    
+    if (targetBtnId) {
+        const btn = document.getElementById(targetBtnId);
+        if (btn) {
+            setMove(0); // שולח פקודת עצירה
+            btn.classList.remove('active-mode'); // מכבה את תאורת הכפתור
+        }
+    }
+});
+
+
 
     // משתנה גלובלי למצב הפנס
     let flashActive = 0; 
